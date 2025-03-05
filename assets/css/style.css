@@ -1,0 +1,17 @@
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+.image-row {
+  display: flex;
+  justify-content: center;
+  /* gap: 0px; */
+}
+
+.image-row img {
+  max-width: 100%;
+  height: auto;
+}

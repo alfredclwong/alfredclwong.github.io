@@ -4,3 +4,5 @@
 
 layout: home
 ---
+
+[Email](mailto:alfred.cl.wong@gmail.com) \| [GitHub](https://github.com/alfredclwong) \| [LinkedIn](https://www.linkedin.com/in/alfred--wong)
