@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[1] A deep dive into OthelloGPT: Sprint"
+title:  "[Draft] A deep dive into OthelloGPT: Sprint"
 date:   2025-03-05 22:13:00 +0000
 categories: jekyll update
 ---
@@ -9,7 +9,7 @@ categories: jekyll update
 </script>
 <link rel="stylesheet" href="/assets/css/style.css">
 
-This post covers the content of a research sprint I did last month on OthelloGPT and mechanistic interpretability, following an initial [Replication]({% post_url 2025-03-02-othello-gpt-0 %}) project. I show that prior work on linear probes can be extended by discovering new probes and using them to interpret an attention head that's part of the mechanism that constructs OthelloGPT's world model! Aside from some preliminary work on research directions that I decided not to pursue for the sprint, this work was done over 16 hours in 2 days.
+This post covers the content of a research sprint I did last month on OthelloGPT, following an initial [Replication]({% post_url 2025-03-02-othello-gpt-0 %}) project. I build on prior work by presenting a new linear feature in the model's residual stream, which I use to mechanistically interpret an attention head. Aside from some preliminary work on research directions that I decided not to pursue for the sprint, this work was done over 16 hours in 2 days.
 
 # Table of Contents
 <div style="border: 1px solid #ccc; background-color:rgb(239, 251, 255); padding: 10px; margin-bottom: 10px; width: 250px">
@@ -33,11 +33,24 @@ This post covers the content of a research sprint I did last month on OthelloGPT
 
 I picked up from the previous post replicating Kenneth Li and Neel Nanda with:
 
-  - A 6M param GPT2-style model (8 layers, 8 heads, 256 dimensions) that could predict legal next moves in 6x6 Othello games 99.97% of the time
-  - A training loop ```train_linear_probe``` that could take an OthelloGPT model and target_fn and train a linear probe at every intermediate layer that mapped residual stream vectors to targets
-  - A linear probe (EE) that could predict whether a board square was empty with 99.95% accuracy using only the model's residual stream at L0_mid
-  - A linear probe (T-M) that could predict whether a non-empty board square belonged to the opponent with 99.2% accuracy at L6_mid
-  - A visualisation that transformed a neuron's weights into a probe basis, showing how the neuron L5N415 activated on a specific board state input to write out that F2 was a legal next move in the unembedding (U) space
+  - A 6M param GPT2-style model (8 layers, 8 heads, 256 dimensions) that predicts legal next moves in 6x6 Othello with 99.97% accuracy.
+    - The input to the model is purely textual, e.g. `F5 D6 C5 F4 E3 C6...`, with each of the 32 possible moves encoded as a unique token.
+    - The model outputs a distribution across all 32 moves and we pick the top-1 logit.
+<img src="/assets/images/othello-gpt/truth.png">
+<img src="/assets/images/othello-gpt/preds.png">
+
+  - A setup for training linear probes: matrices that map from OthelloGPT's residual stream to board state targets.
+    - The residual stream consists of vectors $$\mathbf{x}_p^{(l)} \in \mathbb{R}^{256}$$ at each position $$p \in \{0, \ldots, P-1\}$$ and layer $$l \in \{0, \ldots, L-1\}$$ that are produced by OthelloGPT at inference time.
+    - At each position, we have information $$\mathbf{y}_p \in \{0, \ldots, K-1\}^{36}$$ on the state of each square on the board, e.g. whether a square is $$white$$ (0), $$empty$$ (1), or $$black$$ (2). We call these targets.
+    - Given a target $$Y^{(T)} \in \{0, \ldots, K-1\}^{36 \times P}$$ and input $$X^{(l)} \in \mathbb{R}^{256 \times P}$$, we use logistic regression to train a linear map $$M^{(l)}: X^{(l)} \mapsto \hat{Y}^{(T)}$$. We call this a linear probe (T).
+  - A binary linear probe (EE) that predicts whether a board square is $$empty$$ with 99.99% accuracy at L1_mid (in between the attention block and MLP in the second layer).
+<img src="/assets/images/othello-gpt/probe_ee.png">
+
+  - A binary linear probe (T-M) that predicts whether a non-empty board square belongs to the opponent, i.e. is $$theirs$$ (T) and not $$mine$$ (M), with 99.1% accuracy at L5_mid.
+<img src="/assets/images/othello-gpt/probe_tem.png">
+
+  - A setup for visualising vectors under the basis transformation defined by a binary linear probe.
+    - For a binary probe $$M: \mathbb{R}^{256} \rightarrow \mathbb{R}^{36 \times 2}$$, so we 
 
 <img src="/assets/images/othello-gpt/l5n415_in.png" height="120px"/>
 <img src="/assets/images/othello-gpt/l5n415_out.png" height="120px"/>
