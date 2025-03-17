@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  "[Draft] A deep dive into OthelloGPT: Sprint"
-date:   2025-03-05 22:13:00 +0000
+title: "[1] A deep dive into OthelloGPT: Sprint"
+date: 2025-03-05 22:13:00 +0000
 categories: jekyll update
 ---
 <script type="text/javascript" id="MathJax-script" async
@@ -17,11 +17,17 @@ This post covers the content of a research sprint I did last month on OthelloGPT
     <li><a href="#preliminary-work">Preliminary work</a>
       <ul>
         <li><a href="#status-quo">Status quo</a></li>
-        <li><a href="#inductive-probes">Inductive probes</a></li>
-        <li><a href="#conditional-probes">Conditional probes</a></li>
+        <li><a href="#a-question-and-a-hunch">A question and a hunch</a></li>
+        <li><a href="#inductive-theory">Inductive theory</a></li>
+        <li><a href="#conditional-theory">Conditional theory</a></li>
       </ul>
     </li>
     <li><a href="#sprint">Sprint</a></li>
+      <ul>
+        <li><a href="#revisiting-the-pe-probe">Revisiting the PE probe</a></li>
+        <li><a href="#finding-l2h5">Finding L2H5</a></li>
+        <li><a href="#interpreting-l2h5">Interpreting L2H5</a></li>
+      </ul>
     <li><a href="#improvements">Improvements</a></li>
     <li><a href="#conclusion">Conclusion</a></li>
   </ul>
@@ -33,56 +39,66 @@ This post covers the content of a research sprint I did last month on OthelloGPT
 
 I picked up from the previous post replicating Kenneth Li and Neel Nanda with:
 
-  - A 6M param GPT2-style model (8 layers, 8 heads, 256 dimensions) that predicts legal next moves in 6x6 Othello with 99.97% accuracy.
-    - The input to the model is purely textual, e.g. `F5 D6 C5 F4 E3 C6...`, with each of the 32 possible moves encoded as a unique token.
-    - The model outputs a distribution across all 32 moves and we pick the top-1 logit.
+- A 6M param GPT2-style model (8 layers, 8 heads, 256 dimensions) that predicts legal next moves in 6x6 Othello with 99.97% accuracy.
+  - The inputs and outputs of the model are purely textual, e.g. `C5 B3 E2 D5 B5 E5...`, with each of the 32 possible moves encoded as a unique token.
+  - The model outputs a distribution across all 32 moves and we measure accuracy on the top-1 logit.
 <img src="/assets/images/othello-gpt/truth.png">
 <img src="/assets/images/othello-gpt/preds.png">
 
-  - A setup for training linear probes: matrices that map from OthelloGPT's residual stream to board state targets.
-    - The residual stream consists of vectors $$\mathbf{x}_p^{(l)} \in \mathbb{R}^{256}$$ at each position $$p \in \{0, \ldots, P-1\}$$ and layer $$l \in \{0, \ldots, L-1\}$$ that are produced by OthelloGPT at inference time.
-    - At each position, we have information $$\mathbf{y}_p \in \{0, \ldots, K-1\}^{36}$$ on the state of each square on the board, e.g. whether a square is $$white$$ (0), $$empty$$ (1), or $$black$$ (2). We call these targets.
-    - Given a target $$Y^{(T)} \in \{0, \ldots, K-1\}^{36 \times P}$$ and input $$X^{(l)} \in \mathbb{R}^{256 \times P}$$, we use logistic regression to train a linear map $$M^{(l)}: X^{(l)} \mapsto \hat{Y}^{(T)}$$. We call this a linear probe (T).
-  - A binary linear probe (EE) that predicts whether a board square is $$empty$$ with 99.99% accuracy at L1_mid (in between the attention block and MLP in the second layer).
+- A setup for training linear probes: matrices that map from OthelloGPT's residual stream to board state targets.
+  - The residual stream consists of vectors $$\mathbf{x}_p^{(l)} \in \mathbb{R}^{256}$$ at each move position $$p \in \{0, \ldots, P-1\}$$ and layer $$l \in \{0, \ldots, L-1\}$$ that are produced by OthelloGPT at inference time.
+  - At each position, we have information $$\mathbf{y}_p \in \{0, \ldots, K-1\}^{36}$$ on the state of each square on the board, e.g. whether a square is $$white$$ (0), $$empty$$ (1), or $$black$$ (2). We call these targets.
+  - In a given game, we have a target matrix $$Y \in \{0, \ldots, K-1\}^{36 \times P}$$ and inputs $$X^{(l)} \in \mathbb{R}^{256 \times P}$$ for layer $$l$$. We use logistic regression to train linear maps $$M^{(l)}: X^{(l)} \mapsto \hat{Y}$$ from residual stream vectors to logits $$\hat{Y} \in \mathbb{R}^{36 \times P \times K}$$. We call this a linear probe for layer $$l$$ and we train a separate probe for each layer in the model, including "middle" layers in between the attention block and MLP, referred to as L0_mid or L0.5, etc.
+  <!-- - I decided in the previous post to work with binary probes ($$K=2$$) as they represent the simplest possible features in the model. -->
+
+- A binary linear probe (EE) that predicts whether a board square is $$empty$$ with 99.99% accuracy at L1_mid.
 <img src="/assets/images/othello-gpt/probe_ee.png">
 
-  - A binary linear probe (T-M) that predicts whether a non-empty board square belongs to the opponent, i.e. is $$theirs$$ (T) and not $$mine$$ (M), with 99.1% accuracy at L5_mid.
-<img src="/assets/images/othello-gpt/probe_tem.png">
+- A binary linear probe (T-M) that predicts whether a non-empty board square belongs to the opponent, i.e. is $$theirs$$ (T) and not $$mine$$ (M), with 99.1% accuracy at L5_mid.
+<img src="/assets/images/othello-gpt/probe_tm.png">
 
-  - A setup for visualising vectors under the basis transformation defined by a binary linear probe.
-    - For a binary probe $$M: \mathbb{R}^{256} \rightarrow \mathbb{R}^{36 \times 2}$$, so we 
-
+- A setup for visualising vectors under the basis transformation defined by a binary linear probe.
+  - For a binary probe $$M: \mathbb{R}^{256} \rightarrow \mathbb{R}^{36 \times 2}$$, I interpret the vector ```M[:, i, 1]``` as the direction in the residual stream space that aligns with the target feature for square $$i$$, where $$i=0$$ for ```A1```, $$i=1$$ for ```A2```, etc.
+  - This allows us to transform any vector $$\mathbf{x} \in \mathbb{R}^{256}$$ into a 6x6 board image. For example, I previously transformed the input weights $$\mathbf{w}_i$$ and output weights $$\mathbf{w}_o$$ for neuron L5N415 to show that it activates strongly on a specific input board state to output a positive logit for a corresponding legal square.
 <img src="/assets/images/othello-gpt/l5n415_in.png" height="120px"/>
 <img src="/assets/images/othello-gpt/l5n415_out.png" height="120px"/>
 
-I wanted to continue the work by finding something new, but this was my first attempt at doing mech interp research, so rather than answering more high level questions, such as "what makes a good feature?" or "how do we interpret superposition in transformers?", I went with a simpler approach that lent itself more towards playing around with the model. I set out to answer the question: **"how does OthelloGPT compute its world model?"**
+  - I don't claim that this is the best way to define features, but it's a method with enough intuition and empirical success that I think it's worth running with for now and evaluating later.
+
+#### A question and a hunch
+
+I wanted to build on the work by finding something new, but this was also my first attempt at doing mech interp research. Rather than answering high level questions, such as "what makes a good feature?" or "how do we interpret superposition in transformers?", I went with a practical approach that lent itself more towards playful experimentation. I set out to answer the question: **"how does OthelloGPT compute its world model?"**
 
 I had a hunch that the model was using additional latent features in order to compute the board state. There was some weak evidence for this:
 
-  - At the end of my previous post, I discovered that superposition between the board state probes (EE & T-M) and the unembedding vectors (U) was a likely cause for reduced probe accuracy across the model's final few layers.
+- At the end of my previous post, I noticed alignment patterns between the board state probes (EE & T-M) and the unembedding vectors (U) that looked like superposition. I saw this by visualising W_U in the (EE) and (T-M) bases, showing for example that (U)_A1 was highly colinear with (EE)_A1, (T-M)_B2, and ~(T-M)_C3: board states that are highly correlated with but not equivalent to A1 being a legal move.
 
 <div class="image-row">
-<img src="/assets/images/othello-gpt/w_u_ee.png" width="40%"/>
-<img src="/assets/images/othello-gpt/w_u_t_m.png" width="40%"/>
+  <img src="/assets/images/othello-gpt/w_u_ee.png" width="40%"/>
+  <img src="/assets/images/othello-gpt/w_u_t_m.png" width="40%"/>
 </div>
 
-  - The repertoire of feature vectors that had been discovered amounted to at most 163 dimensions out of 256 available.
+- The repertoire of feature vectors so far amounted to at most 163 dimensions out of 256 available.
 
-| Feature vector          | Count |
-|-------------------------|-------|
-| Token embed (B)         | 32    |
-| Pos embed (P)           | 31    |
-| Empty probe (EE)        | 32    |
-| Theirs/mine probe (T-M) | 36    |
-| Token unembed (U)       | 32    |
-|-------------------------|-------|
-| **Total**               | 163   |
+| Feature vector         | Count |
+|------------------------|-------|
+| Token embed (B)        | 32    |
+| Pos embed (P)          | 31    |
+| Empty probe (EE)       | 32    |
+| Theirs/mine probe (T-M)| 36    |
+| Token unembed (U)      | 32    |
+|------------------------|-------|
+| **Total**              | 163   |
 
-This could either be explained by the probe features becoming irrelevant and getting eroded as a side-effect of LayerNorm scaling, or because the model was trying to represent more features than it had dimensions. The latter would mean that there were more probes to discover, so I set out to find them! I came up with two theories for extra features that the model might be using.
+If this were the entire feature set, it would be possible for the model to represent these features as linearly separable monosemantic directions. The question is whether the model is sufficiently incentivised to do this. We've seen neurons which output legal logits using these board state features, so it seems that the superposition with (T-M) in particular could lead to some undesirable confounding.
 
-#### Inductive logic
+An alternative explanation is that the model does all its legality computations in parallel, after which it no longer needs to maintain an accurate board state representation. Thus it's never necessary to represent the features simultaneously.
 
-My first idea was that it could be working out board states inductively: layer by layer, it could take the current board, apply the next move, flip a bunch of tiles, and continue. In order to do so, it would use board state features corresponding to the $$previous$$ (PTEM) board state, as well as another feature corresponding to $$captured$$ (C) squares.
+Either way, I decided that it would be useful to pursue the hunch and see if it was possible to find some interesting probes. I came up with two theories that could lead to additional features.
+
+#### Inductive theory
+
+My first idea was that OthelloGPT could be working out board states inductively: layer by layer, it could take the current board, apply the next move, flip a bunch of tiles, and continue. In order to do so, it would use board state features corresponding to the $$previous$$ (PTEM) board state, as well as another feature corresponding to $$captured$$ (C) squares.
 
 <!-- <img src="/assets/images/othello-gpt/probe_tem.png"> -->
 <img src="/assets/images/othello-gpt/truth_tem.png">
@@ -93,7 +109,7 @@ The inductive logic for calculating a square's current state from the previous o
 
   - **(PT) -> (T)**: the opponent's squares cannot be captured by their own move
   - **(PM) + (C) -> (T)**: my captured squares get flipped
-  - **(PM) + (~C) -> (M)**: my uncaptured squares stay mine
+  - **(PM) + ~(C) -> (M)**: my uncaptured squares stay mine
   - **(PE) -> (E) or (T)**: one previously empty square gets the opponent's move played on it
 
 <div class="image-row">
@@ -105,17 +121,17 @@ Ignoring pos 0 in the accuracy calculations (I hoped that if I didn't prepend th
 
 <!-- Now, we had three new probes: (PE), (PT-PM), and (C). However, the fact that (T-M) = (PT-PM) \|\| (C), which is equivalent to vector addition, meant that only one of these probes needed to be added to the basis. I decided on (C) due to its high accuracy. -->
 
-#### Conditional logic
+#### Conditional theory
 
-These inductive probes were cool, but I couldn't fit them into my picture of how OthelloGPT was computing the board state in just 5 layers. In order to do this, it had to be possible to calculate several sub-states in parallel. One obvious example was the $$empty$$ (E) state, which was computed after just one attention layer!
+These inductive probes were cool, but I couldn't fit them into my picture of how OthelloGPT was computing the board state in just 5 layers. In order to do this, it had to be possible to calculate several sub-states in parallel. One obvious example was the $$empty$$ (E) state, which was computed across all game positions and board squares after just one attention layer!
 
-I figured that the model had to be separating out the simplest possible features for each square, computing each one in parallel, at the earliest layer possible, and then combining them in later layers. For example, the $$captured$$ (C) feature could be initialised as a maximum likelihood prior across all squares that a move could *potentially* capture and then refined over subsequent layers. This greedy approach would explain the better-than-random L0 probe accuracies.
+I figured that the model had to be separating out the simplest possible features for each square, computing each one in parallel, at the earliest layer possible, and then combining them in later layers. For example, the $$captured$$ (C) feature could be initialised as a maximum likelihood prior across all squares that a move could *potentially* capture and then refined over subsequent layers (it's not possible to capture (E) squares, etc.). This greedy approach could explain the better-than-random probe accuracies at L0, immediately after embedding.
 
-The combination of these simple probes into useful outputs would then be done via conditional statements. For example, only $$empty$$ (E) squares can be $$legal$$ (L), and only (~E) squares can be $$theirs$$ or $$mine$$ (T-M).
+The combination of these simple probes into useful outputs would then be done via conditional statements. For example, only $$empty$$ (E) squares can be $$legal$$ (L), and only ~(E) squares can be $$theirs$$ or $$mine$$ (T-M).
 
 <img src="/assets/images/othello-gpt/decision-flowchart.svg">
 
-These simple features could be combined as linear functions across token positions using attention heads, or as non-linear functions within the same position using neurons. For example, we previously saw that once the board state was computed at each position, neurons could be used to find legal moves. But in other cases, such as predicting the final move in a game, an attention head might be more suitablefor finding  all previous moves and outputting the remaining empty square.
+These combinations could be expressed as linear functions across token positions using attention heads, or as non-linear functions within the same position using neurons. For example, we previously saw that once the board state was computed at each position, neurons could be used to find legal moves. But in other cases, such as predicting the final move in a game, an attention head might be more suitable for finding all previous moves and outputting the remaining empty square as the only possible move.
 
 This idea led me down a rabbit-hole of training a lot of probes which were ultimately not very useful, but I think the underlying intuition is still nice! It suggests an intelligence paradigm more akin to how a highly parallelised, probabilistic machine brain would think, as opposed to a human one.
 
@@ -127,7 +143,7 @@ This made me choose an even narrower project scope. Instead of figuring out how 
 
 #### Revisiting the PE probe
 
-In an earlier investigation, I trained a $$captured$$ (C) probe with the relationship (T-M) = (PT-PM) + (C). I hypothesised that a similar relationship could be found linking (E) and (PE) - the difference between the two is equivalent to the move that was just played! Similarly to before, I trained binary probes (EE) and (PEE) that ignored which player the non-empty squares belonged to. This time round, the performance between the existing (PE) probe and new (PEE) probe was identical.
+While investigating my [Inductive Theory](#inductive-theory), I trained a $$captured$$ (C) probe with the relationship (T-M) = (PT-PM) + (C). I hypothesised that a similar relationship could be found linking (E) and (PE) - the difference between the two is equivalent to the move that was just played! Similarly to before, I trained binary probes (EE) and (PEE) that ignored which player the non-empty squares belonged to. This time round, the performance between the existing (PE) probe and new (PEE) probe was identical.
 
 ```python
 def empty_target(batch, device):
@@ -214,7 +230,7 @@ I used these tools to visualise how much of the decomposed residual stream at ea
 
 <img src="/assets/images/othello-gpt/explained_var.png">
 
-As expected, the L0 heads were fairly active in this basis, as were the L7 heads. I interpreted the latter as a computation in (U) space that spilled over into (EE) space due to colinearities from superposition, but investigating this was out of scope. Interestingly, L2H5 was the highest in explained variance, so I looked at some sample attention patterns using circuitsvis.
+As expected, the L0 heads were fairly active in this basis, as were the L7 heads. I interpreted the latter as a computation in (U) space that spilled over into (EE) space due to colinearities, but investigating this was out of scope. Interestingly, L2H5 was the highest in explained variance, so I looked at some sample attention patterns using circuitsvis.
 
 <div class="image-row">
 <img src="/assets/images/othello-gpt/l2h5_0.png" width="30%"/>
@@ -242,7 +258,7 @@ $$\mathbf{x_{out}} = (A \otimes W_O W_V) \cdot \mathbf{x_{src}}$$
 
 Thus, it was possible to probe each individal weight matrix to see how they aligned with certain features across head dimensions. Interpreting these results was more difficult than with the neurons because there were multiple head dimensions, compared to the single scalar activation value for each neuron, so it was possible that linear combinations were being taken across head dimensions. Fortunately, L2H5 was almost as monosemantic as attention heads can get.
 
-I probed L2H5's (W_K) with (PEE-EE) and the $$positional\ embedding$$ (P), expecting to see strong alignment with (PEE-EE)_D5 and (P)_0.
+I probed L2H5's (W_K) with (PEE-EE) and the $$positional$$ (P) embedding, expecting to see strong alignment with (PEE-EE)_D5 and (P)_0. Note: the (P) image is arranged into a board image but in this case it doesn't mean anything.
 
 <div class="image-row">
 <img src="/assets/images/othello-gpt/l2h5_w_k_pee_ee.png" width="45%">
@@ -262,12 +278,12 @@ The images for (W_V) weren't super clear, but it was more important to see which
 
 <img src="/assets/images/othello-gpt/l2h5_w_o_ee.png" width="45%">
 
-From the (W_O) transformations, I could see that dimensions 19 & 27 wrote out (EE)_D5 and dimensions 20 & 23 wrote out (~EE)_D5. Referring back to the (W_V) images, the (EE)_D5 dimensions roughly matched to (P)_0 and (~PEE-EE)_D5 source tokens, and the (~EE)_D5 dimensions matched to (~P)_0 and (PEE-EE)_D5!
+From the (W_O) transformations, I could see that dimensions 19 & 27 wrote out (EE)_D5 and dimensions 20 & 23 wrote out ~(EE)_D5. Referring back to the (W_V) images, the (EE)_D5 dimensions roughly matched to (P)_0 and ~(PEE-EE)_D5 source tokens, and the ~(EE)_D5 dimensions matched to ~(P)_0 and (PEE-EE)_D5!
 
 Putting everything together, I showed that:
 
   - (W_K) aligned strongly with (PEE-EE)_D5 and (P)_0/1/3 such that L2H5 would attend to either the position where D5 was played or pos 0/1/3 if D5 hadn't yet been played
-  - (W_OV) would write out (EE)_D5 if L2H5 attended to (P)_0 or (~EE)_D5 if it attended to (~P)_0!
+  - (W_OV) would write out (EE)_D5 if L2H5 attended to (P)_0 or ~(EE)_D5 if it attended to ~(P)_0!
 
 # Improvements
 
@@ -288,7 +304,7 @@ Interpreting the L2H5 attention head across all head dimensions was pretty clunk
 <img src="/assets/images/othello-gpt/l2h5_ee_ov_p.png" width="45%">
 </div>
 
-This is much more interpretable. In fact, we can see now that, while the (MOV)_D5 source tokens write out (~EE)_D5, the (P)_0 source tokens don't actually output (EE)_D5!!
+This is much more interpretable. In fact, we can see now that, while the (MOV)_D5 source tokens write out ~(EE)_D5, the (P)_0 source tokens don't actually output (EE)_D5!!
 
 #### (P) basis reduction
 
@@ -307,7 +323,7 @@ It looks like (PR)_0, which aligns with (P)_0 and (P)_1, writes out (EE)_D5. Thi
 
 My goal for the project was to find evidence for additional probes and use them to interpret an attention head for computing the board state. I think I managed to achieve this!
 
-  - I found two interesting probes, corresponding to squares that were just $$captured$$ (C) and just $$moved$$ (MOV). The inductive probes (PT-PM) and (PEE) could be interpreted as linear combinations: (PT-PM) + (C) + (MOV) = (T-M) and (PEE) - (MOV) = (EE).
+  - I found two interesting probes, corresponding to squares that were just $$captured$$ (C) and just $$moved$$ (MOV). The inductive probes (PT-PM) and (PEE) can be derived as linear combinations: (PT-PM) = (T-M) - (C) - (MOV) and (PEE) = (EE) + (MOV).
   - I used cached residual stream contributions from each attention head to identify L2H5, which almost exclusively outputted (EE)_D5 vectors.
   - I showed that the QK circuit in L2H5 attended to D5 if it had been previously played, and then showed that the OV circuit wrote out that D5 was not empty if attended to.
 
