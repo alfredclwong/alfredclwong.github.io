@@ -36,11 +36,22 @@ td {
 
 pre code {
   display: block;
-  max-height: 500px;
+  max-height: 300px;
   overflow-y: auto;
   overflow-x: auto;
+  font-size: 12px;
 }
 
+
+#markdown-toc::before {
+  content: "Table of Contents";
+  display: block;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-top: 0em;
+  margin-bottom: 0.5em;
+  margin-left: -1em;
+}
 #markdown-toc {
   background: rgb(239, 251, 255);
   border: 1px solid #ddd;

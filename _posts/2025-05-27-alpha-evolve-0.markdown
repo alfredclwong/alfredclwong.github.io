@@ -24,11 +24,10 @@ FunSearch is good at solving combinatorial problems, often using a human-provide
 
 It's so good at this, in fact, that it managed to find a new best [solution](https://colab.research.google.com/github/google-deepmind/funsearch/blob/master/cap_set/cap_set.ipynb) to the cap-set problem. This is pretty exciting stuff, as it's one of the few current examples of LLM-generated scientific discovery. It also presents a fun engineering challenge, as the evolutionary algorithm benefits from the scalability of highly parallelised processing. For these reasons, I decided it would make a suitable candidate for my next paper replication.
 
-# Table of Contents
 * TOC
 {:toc}
 
-# Replication
+## Replication
 
 The core components of the algorithm are:
 - Task
@@ -36,7 +35,7 @@ The core components of the algorithm are:
 - Database
 - Prompt
 
-## Task
+### Task
 
 Since DeepMind already tackled mathematics, I chose to apply the algorithm to the task of developing board game AIs, specifically for [Othello](https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english). I asked for completions to the following function, using the board state, current player, and time remaining (starting at 9999ms for each player) to return a chosen move.
 
@@ -58,7 +57,7 @@ def ai(board: T_BOARD, player: Player, clock: T_CLOCK) -> T_SQUARE:
 
 I could have provided more of a skeleton here, for example by setting up a minimax search tree and asking for a scoring function, but I was curious about how the algorithm would perform with a more open-ended task.
 
-## Evaluation
+### Evaluation
 
 Each completion was run in a Docker container against a collection of preset AIs, following an [evaluation cascade](https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/AlphaEvolve.pdf) where a 90% win-rate was required to advance to the next AI. The levels of difficulty were:
 
@@ -68,11 +67,11 @@ Each completion was run in a Docker container against a collection of preset AIs
 
 Each level consisted of 100 games (split 50/50 between black/white) where each win was scored +1, each loss -1, and each draw 0. At each level, the minimum possible score was 0.
 
-## Database
+### Database
 
 In anticipation of asynchronous processing, I stored the completions and scores in separate tables. I also tracked the tree structure of which completions were used as inspirations for later completions.
 
-## Prompt
+### Prompt
 
 ```
 Act as an expert Python developer. Your job is to provide the best possible completion of \
@@ -111,8 +110,8 @@ function and before they are used. Make sure that the completion is valid Python
 
 I used gemma-3-27b-it for free on OpenRouter, asking for reasoning in the prompt as well as the code completion. The inspirations were sampled as the topk scoring completions in the database. With 3 inspirations per prompt, the number of input tokens grew to about 6000, and the output tokens were limited to 2000. The generation speed was around 50-60 tps.
 
-# Results
-## The Good
+## Results
+### The Good
 
 {% include image.html url="/assets/images/alpha-evolve/meme.png" %}
 This was a super basic replication on a fairly ambitious task, so I wasn't expecting much. I was pleasantly surprised to see that, after an overnight run, a sufficiently smart AI had emerged that could beat Egaroucid on a search depth of 2!
@@ -121,11 +120,11 @@ This was a super basic replication on a fairly ambitious task, so I wasn't expec
 
 ai_277 scores each move using various sub-scores, ranging from corner control and number of flips to more obscure definitions such as 'stability' and 'mobility'. The total score is a weighted sum, and the weights are also a function of the game_stage, a variable which is (probably mistakenly) calculated as the number of player-owned pieces on the board.
 
-## The Bad
+### The Bad
 
 The evolutionary steps seemed to vary between tweaking the weights and introducing/removing sub-scores, with the overall structure fairly constant after the first few generations. This meant that the trajectory was extremely prone to plateauing, as the evolutions randomly searched the weight space, or even degenerating, as important sub-scores were removed. In reality, I had to re-initialise the database if I saw that a stale path was being followed.
 
-## The Ugly
+### The Ugly
 
 Even worse, since nothing was done to encourage branching, an unlucky start to the evolutionary tree could result in a dead-end. For example, one run began by implementing a greedy algorithm that selected the move which flipped the most tiles. Since this number is non-negative, this implementation found the move with the highest score by initialising `max_flips = -1` and then iterating over the scores. This subsequently evolved into a score-based approach which ended up including negative components, but now with `max_score = -1` rather than `-float('inf')`, as a legacy of its evolutionary roots. Thus, the AI would return `None` when it assigned negative scores to all valid moves, resulting in a loss due to illegal play.
 
@@ -257,14 +256,15 @@ def ai_72(board: T_BOARD, player: Player, clock: T_CLOCK) -> T_SQUARE:
 
 ```
 
-# Improvements
+## Improvements
 Basically follow the AlphaEvolve improvements, ranked by ablation effect
 
-## Evolutionary prompting
+### Evolutionary prompting
 - Multiple, stochastic templates (tweak/fix/prune/explore)
 - Probabilistic inspiration sampling (MAP elites)
 - Richer context (evolution progress, more metrics)
-## Faster processing
+
+### Faster processing
 - Parallel evals
   - More evals to reduce randomness/discrete jumps
   - More metrics

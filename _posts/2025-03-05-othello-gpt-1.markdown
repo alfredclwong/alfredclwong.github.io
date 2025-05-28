@@ -10,38 +10,12 @@ date: 2025-03-05 22:13:00 +0000
 
 This post covers the content of a research sprint I did last month on OthelloGPT, following an initial [Replication]({% post_url 2025-03-02-othello-gpt-0 %}) project. I build on prior work by presenting several new linear features in the model's residual stream, which I use to interpret mechanisms in an attention head. First, I recap the previous work and show some initial ideas that I had, before covering the main body of work done in 16 hours over 2 days. I then show how some quick follow-ups helped to improve the results significantly.
 
-# Table of Contents
-<div style="border: 1px solid #ccc; background-color:rgb(239, 251, 255); padding: 10px; margin-bottom: 10px; width: 250px">
-  <ul>
-    <li><a href="#preliminary-work">Preliminary work</a>
-      <ul>
-        <li><a href="#status-quo">Status quo</a></li>
-        <li><a href="#a-question-and-a-hunch">A question and a hunch</a></li>
-        <li><a href="#inductive-theory">Inductive theory</a></li>
-        <li><a href="#conditional-theory">Conditional theory</a></li>
-      </ul>
-    </li>
-    <li><a href="#sprint">Sprint</a>
-      <ul>
-        <li><a href="#revisiting-the-pe-probe">Revisiting the PE probe</a></li>
-        <li><a href="#finding-l2h5">Finding L2H5</a></li>
-        <li><a href="#interpreting-l2h5">Interpreting L2H5</a></li>
-      </ul>
-    </li>
-    <li><a href="#improvements">Improvements</a>
-      <ul>
-        <li><a href="#mov-probe">MOV probe</a></li>
-        <li><a href="#p-basis">P basis</a></li>
-        <li><a href="#bilinear-visualisation">Bilinear visualisation</a></li>
-      </ul>
-    </li>
-    <li><a href="#conclusion">Conclusion</a></li>
-  </ul>
-</div>
+* TOC
+{:toc}
 
-# Preliminary work
+## Preliminary work
 
-#### Status quo
+### Status quo
 
 I picked up from the previous post replicating Kenneth Li's and Neel Nanda's work with:
 
@@ -74,7 +48,7 @@ I picked up from the previous post replicating Kenneth Li's and Neel Nanda's wor
 
   <!-- - I don't claim that this is the best way to define features, but it's a method with enough intuition and empirical success that I think it's worth running with for now and evaluating later. -->
 
-#### A question and a hunch
+### A question and a hunch
 
 I wanted to build on this work, but this was also my first attempt at doing mech interp research. Rather than answering high level questions, such as "what makes a good feature?" or "how do we interpret superposition in transformers?", I went with a more practical approach. I set out to answer the question: **"how does OthelloGPT compute its world model?"**
 
@@ -132,7 +106,7 @@ An alternative explanation is that the model does all its legality computations 
 
 Either way, I decided that it would be useful to pursue the hunch and see if it was possible to find some interesting probes. I came up with two theories that could lead to additional features.
 
-#### Inductive theory
+### Inductive theory
 
 My first idea was that OthelloGPT could be working out board states inductively: layer by layer, it could take the current board, apply the next move, flip a bunch of tiles, and continue. In order to do so, it would use board state features corresponding to the $$previous$$ board state (PTEM), as well as another feature corresponding to $$captured$$ (C) squares.
 
@@ -160,7 +134,7 @@ Ignoring pos 0 in the accuracy calculations (I hoped that if I didn't prepend th
 
 <!-- Now, we had three new probes: (PE), (PT-PM), and (C). However, the fact that (T-M) = (PT-PM) \|\| (C), which is equivalent to vector addition, meant that only one of these probes needed to be added to the basis. I decided on (C) due to its high accuracy. -->
 
-#### Conditional theory
+### Conditional theory
 
 These inductive probes were cool, but this logic would require 31 layers to compute all board positions. Yet, judging from the accuracy plots, OthelloGPT seemed to suffice with just 5. This meant that it had to be calculating board state elements across multiple positions in parallel. One clear example was the $$empty$$ (E) state, which was computed across all game positions and board squares after just one attention layer!
 
@@ -174,13 +148,13 @@ These combinations could be expressed as linear functions across token positions
 
 This idea led me down a rabbit-hole of training a lot of probes which were ultimately not very useful, but I think the underlying intuition is still nice! It suggests an intelligence paradigm more akin to how a highly parallelised, probabilistic machine brain would think, as opposed to a human one.
 
-# Sprint
+## Sprint
 
 At this point, I was getting pretty bogged down in the project. I felt I hadn't really discovered anything concrete, the messy code was piling up, and my latest investigations had been frustratingly unfruitful. I decided to use the application process to Neel's MATS stream as a forcing function to get something done in a 16-hour sprint.
 
 This made me choose an even narrower project scope. Instead of figuring out how the entire board state was computed, I decided to focus in on just the $$empty$$ (E) state.
 
-#### Revisiting the PE probe
+### Revisiting the PE probe
 
 While investigating my [Inductive Theory](#inductive-theory), I trained a $$captured$$ (C) probe with the relationship (T-M) = (PT-PM) + (C). I hypothesised that a similar relationship could be found linking (E) and (PE) - the difference between the two is exactly one previously empty square on which the latest move was played. I trained binary probes (EE) and (PEE) that targeted only whether squares are empty or non-empty, ignoring other information.
 
@@ -213,7 +187,7 @@ Since both probes had very high accuracies, I just worked with the normed differ
 
 This was sufficient information for computing the (EE) board state using just one layer: all the model had to do was see which moves hadn't yet been played at each position and mark these as (EE). And all I had to do was find the attention heads that did this...
 
-#### Finding L2H5
+### Finding L2H5
 
 I used two tools here to identify attention heads that were writing out (EE) vectors. The first was Neel's TransformerLens library, which I used to cache the decomposed residual stream vectors being written by each attention head across 200 forward passes of the model.
 
@@ -290,7 +264,7 @@ It looked like L2H5 attended specifically to the D5 token, otherwise defaulting 
 
 {% include image.html url="/assets/images/othello-gpt/explained_var_ee_D5.png" description="Fig 13. A heatmap showing the percentage of output variacne from each OthelloGPT component that is captured by the singular (EE)_D5 vector, averaged across a batch of 200 games." %}
 
-#### Interpreting L2H5
+### Interpreting L2H5
 
 Although I couldn't explain why a whole L2 attention head was seemingly being used to recompute the (EE) state for D5 (assuming that it had already been calculated after L0), I decided to go ahead with interpreting it anyway and deal with that question later.
 
@@ -332,11 +306,11 @@ Next, I probed L2H5's (W_V) with (PEE-EE) and (P), and also probed L2H5's (W_O) 
 
 From the (W_O) transformations, I could roughly see that dimensions 19 & 27 wrote out (EE)_D5 and dimensions 20 & 23 wrote out ~(EE)_D5. Matching these up to the (W_V) images was difficult - a better visualisation was required.
 
-# Improvements
+## Improvements
 
 The sprint was completed under pretty tight time constraints, so a lot of the decisions I made were suboptimal and the original conclusion was fairly lacklustre. After it ended, I made a few quick clean-ups that significantly improve the quality of the results.
 
-#### MOV probe
+### MOV probe
 
 Firstly, I replaced the (PEE-EE) probe with a new probe trained directly to target the $$latest\ move$$ (MOV). The probe was accurate across all layers.
 
@@ -346,7 +320,7 @@ Firstly, I replaced the (PEE-EE) probe with a new probe trained directly to targ
   <figcaption>Fig 17b. (MOV) probe accuracy across all layers.</figcaption>
 </figure>
 
-#### P basis
+### P basis
 
 Next, checking the (MOV) probe accuracy made me realise that I had never done the same for the positional embedding (P), instead working on the assumption that it maintained its meaning across all layers. In fact, (P) only has to have any meaning at L0_pre, and it's possible that it loses all usefulness once the model encodes moves into the $$theirs/mine$$ basis. I visualised a sample residual stream at L0_pre, L0_mid, and L2_pre through a (P) transformation and saw that this seemed to be the case.
 
@@ -386,7 +360,7 @@ def pos_target(batch, device):
 
 Success! We can now see a pattern that suggests that the QK circuit broadly attends to (MOV)_D5 keys from ~(Z) queries, and vice versa. Additionally, the head dimensions in (W_K) that align positively with (MOV)_D5 also align positively with (Z), providing a mechanism for attending to keys with (MOV)_D5 or (Z), subject to scaling and causal masking.
 
-#### Bilinear visualisation
+### Bilinear visualisation
 
 Finally, I revisited the attention head weights visualisation. Instead of probing each (W_K), (W_Q), etc. independently, I applied the probes to each side of the full bilinear forms and plotted the resulting matrices. This helped to remove some ambiguity about how the head dimensions would interact with each other in the dot product.
 
@@ -413,7 +387,7 @@ Great success! After scaling the normed (Z) vector by 10x (which I think is nece
   - A (Z) value token, and many ~(MOV)_D5 values, will output (EE)_D5.
   - ~(Z) and (MOV)_D5 values will output ~(EE)_D5.
 
-# Conclusion
+## Conclusion
 
 My goal for the project was to find evidence for additional probes and use them to interpret an attention head for computing the board state. I didn't quite accomplish this in the sprint, but after the follow-up I'd say I managed it!
 

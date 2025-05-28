@@ -10,22 +10,10 @@ date:   2025-03-02 04:09:00 +0000
 
 This is the first part of a series on OthelloGPT and mechanistic interpretability. In this post, I'll go over how I replicated prior work with a few small changes, resulting in a GPT that can predict legal moves in 6x6 Othello 99.97% of the time and linear probes that suggest that the model learnt to construct a representation of the board state from textual inputs. These probes will then be used to reverse engineer mechanisms within the 6M param GPT, providing insights into how transformer models think!
 
-<div style="border: 1px solid #ccc; background-color:rgb(239, 251, 255); padding: 10px; margin-bottom: 10px; width: 250px">
-  <strong>Table of Contents</strong>
-  <ul>
-    <li><a href="#background">Background</a></li>
-    <li><a href="#replication">Replication</a>
-      <ul>
-        <li><a href="#base-model">Base model</a></li>
-        <li><a href="#linear-probes">Linear probes</a></li>
-        <li><a href="#interpreting-neurons">Interpreting neurons</a></li>
-      </ul>
-    </li>
-    <li><a href="#conclusion">Conclusion</a></li>
-  </ul>
-</div>
+* TOC
+{:toc}
 
-# Background
+## Background
 OthelloGPT is a GPT2-style model trained on [Othello](https://www.worldothello.org/about/about-othello/othello-rules/official-rules/english) games, introduced by Kenneth Li et al. in 2023.[^1] [^2] Random game sequences such as `F5 D6 C5 F4 E3 C6...` are fed in as textual input, where each of the 60 possible moves is represented by a unique token (A1 = 0, B1 = 1, ..., H8 = 59), and the model is trained to predict the next move in the sequence. No prior structures are presented to the model, as it only works with these serially tokenised move IDs, yet it manages to predict legal moves with high accuracy. Here's an online implementation of the base game with an AI for you to play against!
 
 <div style="text-align: center;"><iframe src="https://othello-rust.web.app/" width="300" height="200"></iframe></div>
@@ -36,7 +24,7 @@ A follow-up by Neel Nanda[^3] showed that if you trained a probe to predict whet
 
 Mechanistic interpretability is a really cool subset of AI Safety that is essentially neuroscience for AIs. As LLMs continue to explode in complexity, capability, and applicability, work such as this peels back the veil and provides transpicuous insights into what makes this latest generation of digital brains tick. I've been particularly fascinated with mech interp since discovering it, and with my previous experience in playing chess, I figured a project based on another board game would be a fun way to start exploring, so I got stuck in.
 
-# Replication
+## Replication
 #### Base model
 Self-attention has a time complexity of $$\mathcal{O}( n_l(n_cd_m^2 + n_c^2d_m))$$, where $$n_l$$ is the number of layers, $$n_c$$ is the context length, and $$d_m$$ is the dimension of the model's residual stream. With an $$s\times s$$ board, the length of the game $$n_c \sim s^2$$, and the number of dimensions required to represent the board state $$d_m \sim s^2$$, assuming that each square is represented by one of more orthogonal "feature" vectors. This means that inference is $$\mathcal{O}(n_ls^6)$$! As such, the first change I made was to shrink the board size down to $$6\times6$$, which made repeated experimentation much more tractable whilst keeping the toy model non-trivial.
 
@@ -118,7 +106,7 @@ I did this to L5N415 (the 415th neuron in the 5th MLP layer), plotting the input
 
 But as we saw in the previous section, writing out (U_F2) also writes out (T-M_E3) and (M-T_D4), an example of the model using **correlation, not causation**, in its computations. This is an explanation for why the model's board state representation degraded after L5_mid: superposition!
 
-# Conclusion
+## Conclusion
 At this point, I was fairly satisfied with the replication work I'd done. I had reduced the model down to a much more manageable size, recreated the original probes, made a few slight alterations, and found a cool neuron. I think I gained three new insights from this work:
 1. The empty probe was a perfect predictor across most of the model
 2. Untying the embedding/unembedding weights allowed the model to align them to different, more relevant, and interpretable vectors
@@ -130,7 +118,7 @@ I originally intended for this to be a little side project that would allow me t
 
 Feel free to fork my code[^7] if it's at all usable, or send me an email if you have any questions or requests. I'm new to this, so I'd really appreciate any thoughts and feedback. If you got this far, thanks for reading!
 
-# References
+## References
 [^1]: Kenneth Li et al. (2023). "Emergent World Representations: exploring a sequence model trained on a synthetic task". *ICLR 2023*. [URL](https://arxiv.org/pdf/2210.13382)
 [^2]: Kenneth Li, "Do Large Language Models learn world models or just surface statistics?", The Gradient, 2023. [URL](https://thegradient.pub/othello/)
 [^3]: Neel Nanda. "Actually, Othello-GPT Has A Linear Emergent World Representation". [URL](https://www.neelnanda.io/mechanistic-interpretability/othello)
