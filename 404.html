@@ -20,6 +20,66 @@ layout: page
 <div class="container">
   <h1>404</h1>
 
-  <p><strong>Page not found :(</strong></p>
-  <p>The requested page could not be found.</p>
+  <p>Page not found :(</p>
+
+  <canvas id="gameOfLife" width="400" height="400" style="border:1px solid #ccc; margin: 20px auto; display: block;"></canvas>
+  <script>
+  const canvas = document.getElementById('gameOfLife');
+  const ctx = canvas.getContext('2d');
+  const cellSize = 10;
+  const cols = canvas.width / cellSize;
+  const rows = canvas.height / cellSize;
+
+  let grid = Array.from({length: rows}, () => Array.from({length: cols}, () => Math.random() > 0.7 ? 1 : 0));
+
+  function drawGrid() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (grid[y][x]) {
+          ctx.fillStyle = '#222';
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+  }
+
+  function nextGen() {
+    const newGrid = grid.map(arr => [...arr]);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        let neighbors = 0;
+        for (let i = -1; i <= 1; i++) {
+          for (let j = -1; j <= 1; j++) {
+            if (i === 0 && j === 0) continue;
+            const ny = y + i, nx = x + j;
+            if (ny >= 0 && ny < rows && nx >= 0 && nx < cols) {
+              neighbors += grid[ny][nx];
+            }
+          }
+        }
+        if (grid[y][x] && (neighbors < 2 || neighbors > 3)) newGrid[y][x] = 0;
+        else if (!grid[y][x] && neighbors === 3) newGrid[y][x] = 1;
+      }
+    }
+    grid = newGrid;
+  }
+
+  function animate() {
+    drawGrid();
+    nextGen();
+    requestAnimationFrame(animate);
+  }
+
+  canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    if (x >= 0 && x < cols && y >= 0 && y < rows) {
+      grid[y][x] = 1;
+    }
+  });
+
+  animate();
+  </script>
 </div>
