@@ -33,3 +33,25 @@ td {
   max-width: 100%;
   white-space: nowrap;
 }
+
+pre code {
+  display: block;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+#markdown-toc {
+  background: rgb(239, 251, 255);
+  border: 1px solid #ddd;
+  padding: 1em 1em 1em 2em;
+  border-radius: 8px;
+  font-size: 1em;
+  margin-left: 0;
+  margin-bottom: 2em;
+  width: 250px;
+}
+#markdown-toc ul {
+  list-style-type: disc;
+  margin-left: 1.5em;
+}

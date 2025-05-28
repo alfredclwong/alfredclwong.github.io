@@ -1,8 +1,7 @@
 ---
 layout: post
-title: "[1] A deep dive into OthelloGPT: Sprint"
+title: "A deep dive into OthelloGPT: Sprint"
 date: 2025-03-05 22:13:00 +0000
-categories: jekyll update
 ---
 <script type="text/javascript" id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
@@ -129,7 +128,7 @@ The circuits and features discovered so far were focused on the tail end of the 
 
 If this were the entire feature set, it would be possible for the model to represent these features as linearly separable monosemantic directions. The question is whether the model is sufficiently incentivised to do this. We've seen neurons which output legal logits using these board state features, so it seems that the superposition with (T-M) in particular could lead to some undesirable confounding.
 
-An alternative explanation is that the model does all its legality computations in parallel, after which it no longer needs to maintain an accurate board state representation. Thus it's never necessary to represent the features simultaneously.
+An alternative explanation is that the model does all its legality computations in parallel, after which it no longer needs to maintain an accurate board state representation. Thus it's never necessary to represent the features simultaneously. Along the same lines, my argument would suggest that there are more salient features in the latter layers, not necessarily earlier "board state computation" features.
 
 Either way, I decided that it would be useful to pursue the hunch and see if it was possible to find some interesting probes. I came up with two theories that could lead to additional features.
 

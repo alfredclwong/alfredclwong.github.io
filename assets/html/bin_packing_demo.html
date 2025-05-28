@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sim-panel {
+            flex: 1;
+            padding: 30px;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            background: white;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .visualization {
+            flex: 1;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            align-content: flex-start;
+        }
+
+        .bin {
+            display: flex;
+            flex-direction: column-reverse;
+            width: 25px;
+            height: 20px;
+            margin: 5px;
+            border: 2px solid #666;
+            border-radius: 4px;
+            position: relative;
+            background: #f9f9f9;
+            transition: all 0.2s ease;
+        }
+
+        .bin:hover {
+            border-color: #333;
+        }
+
+        .bin-capacity {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 6px;
+            color: #888;
+        }
+
+        .item {
+            width: 100%;
+            margin: 0;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6px;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .code-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-header {
+            background: #2d2d2d;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #404040;
+        }
+
+        .code-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .code-btn {
+            padding: 6px 12px;
+            border: 1px solid #555;
+            background: #404040;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .code-btn:hover {
+            background: #555;
+        }
+
+        .code-textarea {
+            flex: 1;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: none;
+            outline: none;
+            resize: none;
+            line-height: 1.6;
+        }
+
+        .error-message {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-top: 1px solid #c82333;
+        }
+
+        .current-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 500;
+            color: #333;
+        }
+
+        @keyframes itemDrop {
+            0% {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .item-dropping {
+            animation: itemDrop 0.5s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .sim-panel, .code-panel {
+                flex: none;
+                min-height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <p style="text-align: center; margin-bottom: 16px; font-size: 18px;">Bin Packing Demo</p>
+    <div class="container">        
+        <div class="main-content">
+            <div class="sim-panel">
+                <div class="controls">
+                    <button class="btn" onclick="runSimulation()">Run Simulation</button>
+                    <button class="btn" onclick="generateNewProblem()">New Problem</button>
+                    <button class="btn" onclick="resetSimulation()">Reset</button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="bins-used">0</div>
+                        <div class="stat-label">Bins Used</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="items-packed">0</div>
+                        <div class="stat-label">Items Packed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="efficiency">0%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+                
+                <div class="visualization" id="visualization">
+                    <!-- Bins will be added here dynamically -->
+                </div>
+            </div>
+            
+            <div class="code-panel">
+                <div class="code-editor">
+                    <div class="code-header">
+                        <div class="code-title">Heuristic Function</div>
+                        <div class="code-actions">
+                            <button class="code-btn" onclick="resetCode()">Reset</button>
+                            <button class="code-btn" onclick="validateCode()">Validate</button>
+                        </div>
+                    </div>
+                    <textarea class="code-textarea" id="code-editor" placeholder="Enter your heuristic function here...">function heuristic(item, bins) {
+    // Online bin packing heuristic discovered with FunSearch
+    let score = bins.map(() => 1000);
+    
+    // Penalize bins with large capacities
+    for (let i = 0; i < bins.length; i++) {
+        score[i] -= bins[i] * (bins[i] - item);
+    }
+    
+    // Extract index of bin with best fit
+    let minValue = Math.min(...bins);
+    let index = bins.indexOf(minValue);
+    
+    // Scale score of best fit bin by item size
+    score[index] *= item;
+    
+    // Penalize best fit bin if fit is not tight
+    score[index] -= Math.pow(bins[index] - item, 4);
+    
+    return score;
+}</textarea>
+                    <div class="error-message" id="error-message" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let items = [];
+        let bins = [];
+        let currentItemIndex = -1;
+        let lastSelectedBin = -1;
+        let isRunning = false;
+        let binCapacity = 150;
+        let n_items = 500;
+        let heuristicFunction = null;
+
+        // Color palette for items - more muted colors
+        const colors = [
+            '#6c757d', '#495057', '#6f42c1', '#20c997', 
+            '#fd7e14', '#dc3545', '#0d6efd', '#198754',
+            '#d63384', '#6610f2', '#0dcaf0', '#ffc107'
+        ];
+
+        // Simple utility functions for array operations
+        function argmin(arr) {
+            return arr.indexOf(Math.min(...arr));
+        }
+
+        function argmax(arr) {
+            return arr.indexOf(Math.max(...arr));
+        }
+
+        // Initialize with default problem
+        function generateNewProblem() {
+            items = [];
+            for (let i = 0; i < n_items; i++) {
+                items.push(Math.floor(Math.random() * 80) + 20);
+            }
+            bins = [];
+            
+            currentItemIndex = -1;
+            updateDisplay();
+        }
+
+        function resetSimulation() {
+            bins = [];
+            currentItemIndex = -1;
+            isRunning = false;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const visualization = document.getElementById('visualization');
+            visualization.innerHTML = '';
+            
+            // Add bins
+            bins.forEach((binItems, binIndex) => {
+                const binElement = createBinElement(binItems, binIndex);
+                visualization.appendChild(binElement);
+            });
+            
+            // Update stats
+            document.getElementById('bins-used').textContent = bins.length;
+            document.getElementById('items-packed').textContent = currentItemIndex + 1;
+            
+            // Calculate efficiency
+            const totalItemVolume = items.slice(0, currentItemIndex).reduce((sum, item) => sum + item, 0);
+            const totalBinVolume = bins.length * binCapacity;
+            const efficiency = totalBinVolume > 0 ? Math.round((totalItemVolume / totalBinVolume) * 100) : 0;
+            document.getElementById('efficiency').textContent = efficiency + '%';
+        }
+
+        function createBinElement(binItems, binIndex) {
+            const binDiv = document.createElement('div');
+            binDiv.className = 'bin';
+            
+            const usedCapacity = binItems.reduce((sum, item) => sum + item, 0);
+            const remainingCapacity = binCapacity - usedCapacity;
+            const binHeight = 30; // Fixed height for visualization
+            binDiv.style.height = binHeight + 'px';
+            
+            // Add capacity label
+            const capacityLabel = document.createElement('div');
+            capacityLabel.className = 'bin-capacity';
+            capacityLabel.textContent = `${Math.round(remainingCapacity)}`;
+            binDiv.appendChild(capacityLabel);
+            
+            // Add items
+            binItems.forEach((itemSize, itemIndex) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                const itemHeight = (itemSize / binCapacity) * binHeight;
+                itemDiv.style.height = itemHeight + 'px';
+                itemDiv.style.background = colors[itemIndex % colors.length];
+                itemDiv.textContent = Math.round(itemSize);
+                
+                // Add drop animation only for the very last item placed
+                isLastSelectedBin = lastSelectedBin === -1 ? binIndex === bins.length - 1 : binIndex === lastSelectedBin;
+                if (isLastSelectedBin && itemIndex === binItems.length - 1) {
+                    itemDiv.classList.add('item-dropping');
+                }
+                
+                binDiv.appendChild(itemDiv);
+            });
+            
+            return binDiv;
+        }
+
+        function parseHeuristicFunction() {
+            const code = document.getElementById('code-editor').value;
+            const errorDiv = document.getElementById('error-message');
+            
+            try {
+                // Create a safe execution context for JavaScript
+                const functionCode = `
+                    (function() {
+                        ${code}
+                        return heuristic;
+                    })()
+                `;
+                
+                heuristicFunction = eval(functionCode);
+                errorDiv.style.display = 'none';
+                return true;
+            } catch (error) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Error: ' + error.message;
+                return false;
+            }
+        }
+
+        function validateCode() {
+            if (parseHeuristicFunction()) {
+                alert('Code validated successfully!');
+            }
+        }
+
+        function resetCode() {
+            document.getElementById('code-editor').value = `function heuristic(item, bins) {
+    // Online bin packing heuristic discovered with FunSearch
+    let score = bins.map(() => 1000);
+    
+    // Penalize bins with large capacities
+    for (let i = 0; i < bins.length; i++) {
+        score[i] -= bins[i] * (bins[i] - item);
+    }
+    
+    // Extract index of bin with best fit
+    let minValue = Math.min(...bins);
+    let index = bins.indexOf(minValue);
+    
+    // Scale score of best fit bin by item size
+    score[index] *= item;
+    
+    // Penalize best fit bin if fit is not tight
+    score[index] -= Math.pow(bins[index] - item, 4);
+    
+    return score;
+}`;
+        }
+
+        async function runSimulation() {
+            if (isRunning) return;
+            
+            if (!parseHeuristicFunction()) {
+                return;
+            }
+            
+            isRunning = true;
+            resetSimulation();
+
+            bins = items.map(item => []);
+
+            for (let i = 0; i < items.length; i++) {
+                currentItemIndex = i;
+                const item = items[i];
+                
+                // Get current bin capacities
+                const binCapacities = bins.map(bin => {
+                    const used = bin.reduce((sum, item) => sum + item, 0);
+                    return binCapacity - used;
+                });
+
+                lastSelectedBin = -1;
+                
+                if (binCapacities.length > 0) {
+                    try {
+                        // Call the heuristic function
+                        const scores = heuristicFunction(item, binCapacities);
+                        
+                        // Find the bin with the best score that can fit the item
+                        let bestScore = -Infinity;
+                        for (let j = 0; j < binCapacities.length; j++) {
+                            if (binCapacities[j] >= item && scores[j] > bestScore) {
+                                bestScore = scores[j];
+                                lastSelectedBin = j;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Heuristic function error:', error);
+                        break;
+                    }
+                }
+                
+                bins[lastSelectedBin].push(item);
+                
+                updateDisplay();
+                await new Promise(resolve => setTimeout(resolve, 50)); // Animation delay
+            }
+            
+            bins = bins.filter(bin => bin.length > 0); // Remove empty bins
+            updateDisplay();
+            isRunning = false;
+        }
+
+        // Initialize the demo
+        generateNewProblem();
+        parseHeuristicFunction();
+    </script>
+</body>
+</html>

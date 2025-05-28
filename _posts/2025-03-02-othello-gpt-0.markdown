@@ -1,8 +1,7 @@
 ---
 layout: post
-title:  "[0] A deep dive into OthelloGPT: Replication"
+title:  "A deep dive into OthelloGPT: Replication"
 date:   2025-03-02 04:09:00 +0000
-categories: jekyll update
 ---
 <script type="text/javascript" id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
