@@ -41,6 +41,9 @@ pre code {
   overflow-x: auto;
   font-size: 12px;
 }
+code {
+  white-space : pre-wrap !important;
+}
 
 
 #markdown-toc::before {
