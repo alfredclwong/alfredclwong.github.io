@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "[Draft] Replicating AlphaEvolve"
+title: "[Draft] Circle Packing with AlphaEvolve"
 date: 2025-06-19 17:50:00 +0100
 ---
 <script type="text/javascript" id="MathJax-script" async
@@ -8,56 +8,100 @@ date: 2025-06-19 17:50:00 +0100
 </script>
 <link rel="stylesheet" href="/assets/css/style.css">
 
-A couple months ago, GDM released [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), their latest update on LLM-driven code generation using evolutionary methods. In their [paper](https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/AlphaEvolve.pdf), they detailed how a few tweaks to their previous iteration, called [FunSearch](https://deepmind.google/discover/blog/funsearch-making-new-discoveries-in-mathematical-sciences-using-large-language-models/), created a much more powerful agent. They demonstrated this by applying AlphaEvolve to a bunch of maths and engineering problems and coming up with new best solutions in many cases.
+*I'm doing these projects to build my skills as an AI Research Engineer and communicator. Here's what I learnt this time:*
+- *Parallelism: Ray Core actors and tasks*
+- *Containers: Docker images, Google Container Registry*
+- *Cloud compute: Google Cloud Run*
+- *LLMs: advanced prompt engineering, agentic AI*
+- *Data analysis: textual database management, evolutionary island dashboard*
+
+{% include image.html url="/assets/images/alpha-evolve/vis.png" description="Dashboard for the evolutionary islands that generated a SOTA-breaking circle packing" %}
+
+## Introduction
+
+A couple months ago, GDM released [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), an exciting update on LLM-driven code generation using evolutionary methods. In their [paper](https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/AlphaEvolve.pdf), they how that repeatedly prompting an LLM with progressively richer prompts, constructed by providing feedback on previous attempts, can result in superhuman problem solving.
+
+Notably, they used AlphaEvolve to improve Google's data center scheduling efficiency by 0.7%, reduce Gemini's training time by 1%, optimise a TPU design, and speed up a FlashAttention kernel by 32%. They also found SOTA solutions for a range of mathematical problems, spanning Analysis, Geometry, and Combinatorics.
+
+There already exists an open-source replication called [OpenEvolve](https://github.com/codelion/openevolve/tree/main), but they weren't able to fully replicate the circle-packing result, requiring some manual prompting and a two-stage process to attain 99.94% of the AlphaEvolve result. This is how I managed to beat it!
+
+## Implementation
 
 {% include image.html url="/assets/images/alpha-evolve/alphaevolve.png" description="AlphaEvolve pipeline" %}
 
-With powerful and fast LLMs such as [Gemini 2.5 Flash](https://openrouter.ai/google/gemini-2.5-flash-preview-05-20) accessible for only a few cents per million tokens, and the simplicity of verifying some of the mathematical tasks, this looked like a great candidate for at-home replication. In fact, someone had already created a cool open-source replication called [OpenEvolve](https://github.com/codelion/openevolve/tree/main)!
+AlphaEvolve consists of 4 components: a program database, a prompt builder, an LLM ensemble, and an evaluator pool. They form an evolutionary loop that increases program quality over time by repeating these 6 steps:
 
-However, OpenEvolve's results were somewhat lacklustre: in replicating the [circle-packing problem](https://github.com/codelion/openevolve/tree/main/examples/circle_packing), they used scaffolding in the form of an initial program and a two-stage process with manual changes to the settings and task-specific prompts.
+1. The database sample returns a parent program and some inspiration programs
+2. A prompt is built using these programs to request a diff
+3. An LLM is used to generate the diff
+4. The diff is applied to the parent program to generate a child program
+5. The child program is passed to an evaluator to get scores
+6. The combined program and scores are stored back in the program database
 
-{% include image.html url="/assets/images/alpha-evolve/openevolve_prompt2.png" description="OpenEvolve's second-stage prompt configuration" %}
-
-This didn't sit right with me: I subscribe to the view that advanced AIs shouldn't need human hand-holding to achieve results, à la David Silver's and Richard Sutton's ["Era of Experience"](https://storage.googleapis.com/deepmind-media/Era-of-Experience%20/The%20Era%20of%20Experience%20Paper.pdf) thesis (I highly recommend this [podcast episode](https://youtu.be/zzXyPGEtseI?si=qW4ek0_13GIvt_6M) on the topic). So, I looked into what it would take to Do It Myself.
-
-{% include image.html url="/assets/images/alpha-evolve/vs_funsearch.png" description="FunSearch vs AlphaEvolve" %}
-
-I referenced the above table from the AlphaEvolve paper to see what the main engineering challenges would be, and summed them up as follows:
-
-1. Storing more data to enrich prompt content
-2. Using diff-based evolutionary steps to support more complex programs
-3. Exploiting parallelism to increase throughput while maintaining program diversity
-
-There were lots of aspects to this project that excited me: I like maths, and I'd recently dabbled in an agentic coding project involving code diffs, parallelised processing, and databases for LLM training. I figured, what the hell, let's slap my name on it and try to make my own replication with cleaner prompting. Thus was born [AlfredEvolve](https://github.com/alfredclwong/alfred-evolve).
-
-## Replication
-### Pipeline
-AlphaEvolve consists of an evolution loop that iterates through the following steps:
-
-1. Sample a parent program and inspiration programs from the program database
-2. Build a prompt using the sampled programs
-3. Generate a diff by passing the prompt to an LLM
-4. Apply the diff to the parent to get a child program
-5. Evaluate the child program to get scores
-6. Store the results
-
-I decided to add reasoning to the diff generation step in order to further enrich the prompts, and also allowed the program evaluation to return artifacts, such as the exact circle packing generated by a program, for posterity. This resulted in the following initial code skeleton:
+The pipeline's throughput can be increased by running these steps in parallel for multiple different parent/inspiration samples. I used [Ray](https://docs.ray.io/en/latest/ray-core/walkthrough.html) to handle the parallelism.
 
 ```python
-parent, inspirations = program_database.sample()
+def run_pipeline(
+    parent: Program,
+    inspirations: list[Program],
+    cfg: PipelineConfig,
+    api_key: str,
+) -> Program | Exception:
+    try:
+        prompt = build_prompt(parent, inspirations, cfg.prompt_builder_cfg)
+        diff, reasoning = generate_diff_and_reasoning(prompt, api_key, cfg.llm_cfg)
+        child_content = apply_diff(parent.content, diff)
+        scores, artifacts = evaluate_program(child_content, cfg.program_evaluator_cfg)
+        child = Program(
+            id=None,
+            island_id=parent.island_id,
+            generation=parent.generation + 1,
+            content=child_content,
+            parent_id=parent.id,
+            inspired_by_ids=[insp.id for insp in inspirations if insp.id is not None],
+            prompt=prompt,
+            reasoning=reasoning,
+            diff=diff,
+            scores=scores,
+            artifacts=artifacts,
+        )
+        return child
+    except Exception as e:
+        return e
 
-# Steps 2-5 of the AlphaEvolve pipeline
-prompt = build_prompt(parent, inspirations, cfg.prompt_builder_cfg)
-diff, reasoning = generate_diff_and_reasoning(prompt, api_key, cfg.llm_cfg)
-child_content = apply_diff(parent.content, diff)
-scores, artifacts = evaluate_program(child_content, cfg.program_evaluator_cfg)
-
-program_database.add_program(result)
+@ray.remote
+def run_pipeline_task(
+    parent: Program, inspirations: list[Program], cfg: PipelineConfig, api_key: str
+) -> Program | Exception:
+    return run_pipeline(parent, inspirations, cfg, api_key)
 ```
 
-Steps 1 & 6 involve database operations, which need careful handling in parallelised pipelines, so I set them aside initially and just implemented the intermediate core steps.
+### Database sampling
+I divided the programs database into separate islands which maintained isolated evolutionary trees. Sampling an island returned the highest-scoring program as the parent. I sampled the next 3 best programs, the most recently generated program, and a random program as inspirations. This was a fairly deterministic process, so I limited the nubmer of parallel tasks per island to 2 in order to avoid excess redundancy from repeatedly sampling the same set of programs.
 
-#### Prompt building
+For every 20 programs generated on an island, the best program would be shared with its neighbouring islands, maintaining a balance between diversity through isolation and performance from collaboration.
+
+```python
+for island_id, island in enumerate(self.islands):
+    if len(self.island_tasks[island_id]) >= island.cfg.max_parallel_tasks:
+        # Skip this island if it has reached the max number of running tasks
+        continue
+
+    parent, inspirations = island.sample()
+    task = run_pipeline_task.remote(
+        parent,
+        inspirations,
+        self.cfg.pipeline_cfg,
+        self.api_key,
+    )
+    task_id = id(task)
+    self.island_tasks[island_id][task_id] = task
+    logger.info(f"Started task {task_id} on island {island_id}.")
+```
+
+Future improvements could include score-weighted probabilistic sampling and a MAP-elites style algorithm, requiring a richer feature dictionary.
+
+### Prompt building
 Each prompt consists of several parts:
 - Preamble: a high-level description of the AlphaEvolve process
 - Task: a specific description of the problem to be solved, e.g. circle packing
@@ -65,8 +109,6 @@ Each prompt consists of several parts:
 - Inspirations: similar to the parent section but for several inspiration programs
 - Variation: a randomly sampled prompt variation, e.g. encouraging this diff to refactor the parent program without changing core functionality, or to write a completely new program from scratch
 - Epilogue: a description of the specific format expected from the output
-
-Both the variations and the program sampling are used to provide an element of stochasticity to the evolution process in order to maintain diversity.
 
 ```
 <PREAMBLE>
@@ -155,180 +197,35 @@ Your output should be formatted as follows:
 </EPILOGUE>
 ```
 
-#### Diff/reasoning generation
-I used a POST request to query OpenRouter's API and then parsed the result by searching for the `<REASONING>` and `<DIFF>` tags.
+### Diff generation
+This was the easy part, simply sending the assembled prompt to OpenRouter's API. The setup was all in the prompt engineering, especially the epilogue, shown above, which requested bullet-point reasoning and a SEARCH/REPLACE diff format.
 
-#### Program evaluation
-In order to safeguard against malicious code, I evaluated the programs in separate Docker containers. This was done by copying a task-specific evaluation script as well as the program code onto a container, executing the script, then parsing the output to retrieve scores and artifacts.
+### Program evaluation
+In order to safeguard against malicious code, I used Docker containers to evaluate the programs. An evaluation script `eval.py` was setup to receive programs as environment variables and print out a dictionary of scores to stdout. It could also output artifacts, such as error messages and circle packings, inspired by OpenEvolve.
 
-```python
-def evaluate_program(
-    program_content: str, cfg: ProgramEvaluatorConfig
-) -> tuple[dict[str, float], dict[str, str]]:
-    name = docker_utils.start(
-        base_name=cfg.base_name,
-        image=cfg.image,
-        memory_limit=cfg.memory_limit,
-        cpu_limit=cfg.cpu_limit,
-    )
+```Dockerfile
+FROM python:3.11-slim
 
-    try:
-        return docker_utils.run(
-            container_name=name,
-            program_content=program_content,
-            eval_file_path=cfg.eval_file_path,
-            timeout=cfg.timeout,
-        )
-    except Exception:
-        raise
-    finally:
-        docker_utils.stop(name=name)
+RUN useradd -m sandboxuser
+USER sandboxuser
+WORKDIR /home/sandboxuser
 
-# docker_utils.run
-def run(
-    program_content: str, container_name: str, eval_file_path: Path, timeout: int
-) -> tuple[dict[str, float], dict[str, str]]:
-    eval_result = _eval(container_name, program_content, eval_file_path, timeout)
-    score_str = extract_tagged_text(eval_result, "SCORE")
-    score_dict = parse_json(score_str)
-    score_dict = {k: float(v) for k, v in score_dict.items()}
-    artifacts_str = extract_tagged_text(eval_result, "ARTIFACT")
-    artifacts_dict = parse_json(artifacts_str)
-    return score_dict, artifacts_dict
+RUN pip install --no-cache-dir numpy scipy
+COPY eval.py .
+ENTRYPOINT ["python", "eval.py"]
 ```
 
-### Data model
-I've learnt over the course of several coding projects that things quickly spiral out of control if you don't keep the data structures tidy, especially so when parallelism is involved. My initial implementation had separate classes for Programs, Prompts, Diffs, and Results, but I found that this was much more manageable in one core Program class.
-
-A Program has the following qualities:
-
-- Each Program belongs to an evolutionary tree of Programs
-- A child Program is created by applying a diff to a parent Program
-- Each child Program can be inspired by several previous Programs
-- Each step in the pipeline creates an object that is associated with the child Program
-
-I created a data model to support this tree structure by assigning each Program an `id` and tracking its `parent_id` and `inspired_by_ids`. This was translated into an SQL database using sqlalchemy's ORM library, where the many-to-many inspiration relationships are stored in a separate table.
-
-```python
-@dataclass
-class Program:
-    id: Optional[int]
-    content: str
-    parent_id: Optional[int] = None
-    inspired_by_ids: Optional[list[int]] = None
-    prompt: Optional[str] = None
-    reasoning: Optional[str] = None
-    diff: Optional[str] = None
-    scores: Optional[dict[str, float]] = None
-    artifacts: Optional[dict[str, str]] = None
-```
-
-```python
-Base = declarative_base()
-
-inspiration = Table(
-    "inspiration",
-    Base.metadata,
-    Column("inspired_by_id", ForeignKey("program.id"), primary_key=True),
-    Column("inspired_id", ForeignKey("program.id"), primary_key=True),
-)
-
-class ProgramModel(Base):
-    __tablename__ = "program"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    # ...
-    parent_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("program.id"), nullable=True
-    )
-    parent: Mapped[Optional["ProgramModel"]] = relationship(
-        "ProgramModel",
-        remote_side=[id],
-        back_populates="children",
-    )
-    children: Mapped[list["ProgramModel"]] = relationship(
-        "ProgramModel",
-        back_populates="parent",
-    )
-    inspired_by: Mapped[list["ProgramModel"]] = relationship(
-        "ProgramModel",
-        secondary=inspiration,
-        primaryjoin=id == inspiration.c.inspired_by_id,
-        secondaryjoin=id == inspiration.c.inspired_id,
-        backref="inspired",
-    )
-```
-
-### Island-based parallel evolution
-This is what sets AlphaEvolve apart from previous work.
-
-```python
-def run_pipeline(
-    parent: Program,
-    inspirations: list[Program],
-    cfg: PipelineConfig,
-    api_key: str,
-) -> Program | Exception:
-    try:
-        prompt = build_prompt(parent, inspirations, cfg.prompt_builder_cfg)
-        diff, reasoning = generate_diff_and_reasoning(prompt, api_key, cfg.llm_cfg)
-        child_content = apply_diff(parent.content, diff)
-        scores, artifacts = evaluate_program(child_content, cfg.program_evaluator_cfg)
-        child = Program(
-            id=None,
-            island_id=parent.island_id,
-            generation=parent.generation + 1,
-            content=child_content,
-            parent_id=parent.id,
-            inspired_by_ids=[insp.id for insp in inspirations if insp.id is not None],
-            prompt=prompt,
-            reasoning=reasoning,
-            diff=diff,
-            scores=scores,
-            artifacts=artifacts,
-        )
-        return child
-    except Exception as e:
-        return e
-```
-```python
-@ray.remote
-def run_pipeline_task(
-    parent: Program, inspirations: list[Program], cfg: PipelineConfig, api_key: str
-) -> Program | Exception:
-    return run_pipeline(parent, inspirations, cfg, api_key)
-```
-
-```python
-while True:
-    self._process_task_completions()
-    done = self._start_new_tasks()
-    if done:
-        break
-    self._migrate()
-    time.sleep(0.1)  # Sleep to avoid busy-waiting
-
-logger.info(f"Waiting for {self.n_running_tasks} running tasks to finish...")
-self._wait_for_all_tasks()
-```
-
-```python
-for island_id, island in enumerate(self.islands):
-    if len(self.island_tasks[island_id]) >= island.cfg.max_parallel_tasks:
-        # Skip this island if it has reached the max number of running tasks
-        continue
-
-    parent, inspirations = island.sample()
-    task = run_pipeline_task.remote(
-        parent,
-        inspirations,
-        self.cfg.pipeline_cfg,
-        self.api_key,
-    )
-    task_id = id(task)
-    self.island_tasks[island_id][task_id] = task
-    logger.info(f"Started task {task_id} on island {island_id}.")
-```
+These containers could be run in parallel, either locally or on Google Cloud, allowing for distributed scaling.
 
 ## Results
-### Circle packing
 
+<figure class="image">
+  <div class="image-row">
+    <img src="/assets/images/alpha-evolve/dwc26.gif" width="30%"/>
+    <img src="/assets/images/alpha-evolve/gdm26.png" width="30%"/>
+    <img src="/assets/images/alpha-evolve/sota.png" width="30%"/>
+  </div>
+  <figcaption>Previous/AlphaEvolve/AlfredEvolve circle packings (scores = 2.634/2.63586275/2.635983)</figcaption>
+</figure>
+
+[AlfredEvolve](https://github.com/alfredclwong/alfred-evolve)
