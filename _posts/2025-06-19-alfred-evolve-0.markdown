@@ -15,7 +15,7 @@ date: 2025-06-19 17:50:00 +0100
 - *LLMs: advanced prompt engineering, agentic AI*
 - *Data analysis: textual database management, evolutionary island dashboard*
 
-{% include image.html url="/assets/images/alpha-evolve/vis.png" description="Dashboard for the evolutionary islands that generated a SOTA-breaking circle packing" %}
+{% include image.html url="/assets/images/alpha-evolve/vis.png" description="Dashboard for the evolutionary islands that generated a SOTA-breaking circle packing (click for interactive!)" link="/assets/html/sota.html" %}
 
 ## Introduction
 
@@ -77,7 +77,7 @@ def run_pipeline_task(
 ```
 
 ### Database sampling
-I divided the programs database into separate islands which maintained isolated evolutionary trees. Sampling an island returned the highest-scoring program as the parent. I sampled the next 3 best programs, the most recently generated program, and a random program as inspirations. This was a fairly deterministic process, so I limited the nubmer of parallel tasks per island to 2 in order to avoid excess redundancy from repeatedly sampling the same set of programs.
+I divided the programs database into separate islands which grew their own evolutionary trees in isolation. Sampling an island returned the highest-scoring program as the parent, and I also sampled the next 3 best programs, the most recently generated program, and a random program as inspirations. This was a fairly deterministic process, so I limited the nubmer of parallel tasks per island to 2 in order to avoid excess redundancy from repeatedly sampling the same set of programs.
 
 For every 20 programs generated on an island, the best program would be shared with its neighbouring islands, maintaining a balance between diversity through isolation and performance from collaboration.
 
@@ -99,7 +99,7 @@ for island_id, island in enumerate(self.islands):
     logger.info(f"Started task {task_id} on island {island_id}.")
 ```
 
-Future improvements could include score-weighted probabilistic sampling and a MAP-elites style algorithm, requiring a richer feature dictionary.
+This wasn't a particularly sophisticated setup, so I was surprised it worked so well. Future improvements could include score-weighted probabilistic sampling and a MAP-elites style algorithm, requiring a richer feature dictionary.
 
 ### Prompt building
 Each prompt consists of several parts:
