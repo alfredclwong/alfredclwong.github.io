@@ -19,7 +19,7 @@ date: 2025-06-19 17:50:00 +0100
 
 ## Introduction
 
-A couple months ago, GDM released [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), an exciting update on LLM-driven code generation using evolutionary methods. In their [paper](https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/AlphaEvolve.pdf), they how that repeatedly prompting an LLM with progressively richer prompts, constructed by providing feedback on previous attempts, can result in superhuman problem solving.
+A couple months ago, GDM released [AlphaEvolve](https://deepmind.google/discover/blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/), an exciting update on LLM-driven code generation using evolutionary methods. In their [paper](https://storage.googleapis.com/deepmind-media/DeepMind.com/Blog/alphaevolve-a-gemini-powered-coding-agent-for-designing-advanced-algorithms/AlphaEvolve.pdf), they showed that repeatedly querying an LLM with progressively richer prompts, constructed by providing feedback on previous attempts, can result in superhuman problem solving.
 
 Notably, they used AlphaEvolve to improve Google's data center scheduling efficiency by 0.7%, reduce Gemini's training time by 1%, optimise a TPU design, and speed up a FlashAttention kernel by 32%. They also found SOTA solutions for a range of mathematical problems, spanning Analysis, Geometry, and Combinatorics.
 
