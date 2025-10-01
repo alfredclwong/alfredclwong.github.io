@@ -1,0 +1,24 @@
+---
+layout: post
+title: "[Blogtober #1] Intro"
+date: 2025-10-01 22:44:00 +0100
+---
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+
+{% include image.html url="/assets/images/blogtober/batman-begins.png" description="Source: simon_sfa" %}
+
+After about a year of self-teaching and two consecutive unsuccessful final round interviews, I've found myself stuck in 
+a bit of a rut, in terms of both productivity and positivity. I've often found that, when working independently, it 
+helps to set arbitrary goals, and so I've decided (rather late in the day) that this month I'm going to write a blog 
+post every day!
+
+Of course the quality won't be as high as I'd like and it's gonna be difficult, but I figure it'll be a positive 
+experience regardless, and I think the quality barrier has prevented me from getting some of my work out on the 
+internet. I'll likely cycle between talking about previous projects, current/future work, and shorter paper reviews or 
+general thoughts, which should be less time-consuming. I'd also like to do one paper replication per week and one 
+larger project over the course of the month that showcases engineering skill.
+
+Stay tuned!
