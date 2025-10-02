@@ -1,0 +1,105 @@
+---
+layout: post
+title: "[Blogtober #2] Story"
+date: 2025-10-02 19:02:00 +0100
+---
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+
+<img src="/assets/images/blogtober/fresh-prince.png" height="360px"/>
+
+Kid
+- As a kid, I spent most of my time doing maths problems, playing in chess tournaments, and practising music
+- I did well enough at these, but as with all things there was a feeling that I could never quite get over the hump of 
+"true excellence". In maths, I was invited to an IMO training camp but never made the team; in chess, I played on the 
+national squad but I was a dirty e4 player and the worst on my school team; in music, I became technically proficient 
+but never had the inherent passion and drive to put in sufficient hours of practice.
+- I lost my mum to cancer during this time. This planted a desire in me to work on healthcare-related problems, but I 
+felt that my skillset wasn't well suited. Specifically, my memory recall sucked and I knew this was a core skill in 
+studying medicine. Also, it was a tough time so I found comfort in what I was good at. I stuck to maths. My brother was 
+braver and went for medicine. Despite the difficulties he's faced, I'm proud of him.
+- I considered applying to study Engineering at uni but I felt that this was a high variance option as I had no idea 
+what to expect from interviews. Cambridge maths admissions, on the other hand, were known for being straightforward but 
+tough. I went for it and got into Trinity to study maths!
+- I vividly remember stumbling across Andrew Ng's Coursera course on ML in like 2012 while on a family holiday in 
+Hong Kong and telling everyone that would listen that it was super cool that I could train a net to recognise written
+numbers. Unfortunately no-one was particularly impressed and I didn't take it any further.
+
+Uni
+- Maths was tough. During first year I was really excited to play sports (growing up, my weekends were always taken up
+by Chinese school and church so I never had time). I got into rowing and basketball and caught up on sleep during 
+lectures. Unsurprisingly, I did poorly and got a 2:2.
+- In my second year, I realised that I didn't see a future in maths. I never wanted to be an academic mathematician and 
+for working in the real world, I figured that there was only so much maths you needed to know. I put in the work to 
+catch up on my abysmal first year, secured a 2:1, and asked to transfer to Engineering, where I hoped to pursue more 
+practical studies.
+- When I got to the Engineering department, I was overwhelmed by choice. I could study quantum computing, nuclear 
+energy, bridge building, medical imaging, cars, planes, and more! I really enjoyed the lab setting and opportunities 
+for collaborating. I picked a wide range of modules but gravitated towards electrical engineering, AI, and medical 
+applications. My favourite course during this time was Computational Neuroscience, which lay nicely at the intersection 
+between maths, medicine, and computing. Working on fun stuff paid off and I finally got a first.
+- Fourth year was disrupted by COVID. I was building towards an AI career with a dissertation on causal inference and 
+counterfactual data in clinical trials, but my supervisor was very busy managing her group even before COVID hit and 
+after that we had very few contact hours. The internships and fellowships I applied for were all cancelled and I felt 
+pretty demoralised.
+
+Career
+- I wanted a break from AI but was still interested in pursuing research work. I'd been a massive fan of Google Glass 
+when it was kind of a thing and saw an opening at Microsoft Research Cambridge to work as a research engineer 
+supporting a team of optical engineers designing experimental prototypes. Specifically, we were trying to make 
+multi-lens arrays consisting of 3d-tessellated hexagonal lenses, each with their own unique curved surfaces. In order 
+to do this, our team developed a CSG-based ray tracing library in Julia called OpticSim.jl, and I worked to maintain
+and apply this to prototype designs. Unfortunately Microsoft decided to pull funding for the role and I had to move on.
+- Following this, I'd always been curious about the food industry and I didn't really have any idea where my career was 
+going, so I hit up a friend from school who had helped to start up a food stall in Spitalfieds Market selling biang 
+biang noodles. I ended up working there for 6 months, discovering that working in kitchens is tough and something I'm 
+happy to leave to the experts. After a shocking near-death experience, I decided to look for more traditional jobs.
+- At this point, many of my maths friends from uni were working in quant finance, and one of them reached out to refer 
+me to Optiver, a high-frequency trading firm. I went through the interviews and received an offer to join the next grad 
+cycle in 6 months' time. I realised I had no real understanding of the financial world so in the meantime I interned 
+with another uni friend at a systematic hedge fund, where I helped to build signals for an FX strategy.
+- My time at Optiver was tumultuous to say the least. I did pretty well initially, which I mostly attribute to the 
+ability not to freak out under pressure. The trainee programme was incredible, and within around 6 months I found 
+on the main European index options desk trading my own product! However, I found it tough to manage the load of intense 
+screen trading during market hours followed by the desire to work on research tasks after hours, and slowly began to 
+burn out.
+- As I continued to work, I also discovered aspects of the job and company that I wasn't too pleased with (more on this 
+in another post, probably). Ultimately, this led to me leaving the company after about 1.5 years without a real plan as 
+to what I would do next.
+
+Break
+- 2023 had been a tough year for me, being away from my close friends and family due to living alone in Amsterdam, 
+going through a difficult breakup, and not really enjoying my job. I decided to take a break from work for 6 months to 
+reset myself and I really enjoyed this time.
+- I learnt to box, ski, and scuba dive, went camping in Switzerland and hiking in the Dolomites. When I got back to the 
+UK, I got back into basketball and climbing, and co-hosted some incredible dinner parties with my flatmate who'd 
+recently graduated from Le Cordon Bleu, going on late-night runs to Billingsgate and Smithfield's (iykyk).
+- During this time I caught onto the AI hype, and decided to start self-teaching out of curiosity. I began with the 
+ARENA course, developed by members of the AI safety community, and this naturally led to an interest in mech interp,
+which led to a personal project focused on interpreting OthelloGPT.
+- I got in touch with a two-person startup working on agentic codegen and struggled through a project fine-tuning 
+a diff model for them. Also, I reached out to a neuroscience professor at Oxford and began a collaboration on training 
+models on survival time data in long-term clinical trials.
+- Following this, I continued to build my experience by replicating papers. Most recently, I managed to replicate 
+AlphaEvolve and used my implementation to achieve SOTA on a circle packing problem!
+
+Interviews
+- I finally felt ready to put myself out there and began applying to companies. But soon discovered that I was very 
+much not alone in this space and that the job market had become insanely crowded. I reached out to an experience 
+contact who gave me a much needed reality check: I'd have to work my way up, building my public profile, portfolio, and 
+network deliberately over time.
+- I was fortunate enough to have a small network already, and two referrals led to two great interview experiences. The 
+first was at a well-known codegen startup in SF, where I was flown out for a two-day final round onsite which I flunked 
+spectacularly, after being asked to book flights on a Saturday to arrive on Sunday and interview Monday-Tuesday. The 
+second was at an established drug discovery company in London, where I was ultimately turned down at the final round 
+due to insufficient experience for mid-level roles.
+- And so here I am, simultaneously encouraged and discouraged by my half-successes, and still looking for a job. At 
+times I've felt very foolish and useless for pursuing this career change, but I'm so drawn to the problems that I can't 
+see myself looking anywhere else for now. And so I stubbornly keep moving forwards.
+- I'm currently working on patching up some knowledge and experience gaps that came up during my interviews. 
+Specifically, I'd like to write some explainers on parts that I was weak on and work on some small projects that build 
+my experience in areas where I was lacking. I also feel that ML roles are becoming more specialised as the field 
+matures, and that it would help to focus on a specific type of role within the pipeline, which I hadn't really thought 
+about before. To be continued...
