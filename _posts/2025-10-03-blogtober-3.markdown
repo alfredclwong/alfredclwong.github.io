@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "[Blogtober #3] Efficient attention variants"
+title: "[Blogtober #3] Efficient attention"
 date: 2025-10-03 08:56:00 +0100
 ---
 <script type="text/javascript" id="MathJax-script" async
@@ -8,9 +8,9 @@ date: 2025-10-03 08:56:00 +0100
 </script>
 <link rel="stylesheet" href="/assets/css/style.css">
 
-For my first technical post, I wanted to start with a recap of some transformer fundamentals. Lately I've been 
-interested in understanding how LLMs managed to balloon their context sizes from 1024 tokens in GPT2 to a whopping 2 
-million in Gemini 1.5 Pro. These are likely some of the intermediate adaptations that made this possible.
+For my first technical post, I wanted to start with a recap of some transformer fundamentals. This post will cover 
+some attention adaptations that may have helped to grow LLM context sizes from 1024 tokens in GPT2 to a whopping 2 
+million in Gemini 1.5 Pro.
 
 ## Vanilla attention
 A (causal) attention head takes an input matrix $$X \in \mathbb{R}^{N \times D}$$, consisting of $$N$$ tokens embedded 
@@ -32,14 +32,51 @@ Let's count the matrix multiplications.
 - $$Z$$: $$N^2H$$
 - $$Y$$: $$NHD$$
 
-We can see that the computational complexity grows as $$\mathcal{O}(N^2)$$ with sequence length. Even worse, during auto-regressive generation, the sequence length grows with each iteration! Generating a sequence of final length $$N$$ is $$\mathcal{O}(N^3)$$.
+We can see that the computational complexity grows as $$\mathcal{O}(N^2)$$ with sequence length. Even worse, during auto-regressive generation, the sequence length grows with each iteration! Each time we generate a new token, it is appended to the sequence and the entire attention pattern is recalculated on the new sequence. Thus, generating a sequence of length $$N$$ is $$\mathcal{O}(N^3)$$.
 
-<iframe src="/assets/html/attn-vis.html" width="100%" height="750" scrolling="no">
+## KV caching
+Fortunately, during inference, there are repetitions that can be exploited to reduce the computational load. The animation below shows how an attention pattern is calculated during inference time, as a 6-token sequence is generated.
 
-- KV-cache, chunk, pre-fill
-- FlashAttention
-- MQA/GQA
-- Sliding window attention
-- RetNet
-- YOCO
-- Titans
+<iframe src="/assets/html/attn-vis.html" width="100%" height="750" scrolling="no"></iframe>
+
+We can see that each time a token is added, a new row gets added to the attention matrix. In order to calculate the values along this row, only the query vector for the new token is required. On the other hand, all key vectors, including the one corresponding to the new token, are needed. However, we can see that these key vectors are largely re-used from previous iterations!
+
+If we maintain a cache of key vectors as we go, all we need to do is append the latest key and multiply by the latest query to get the new row. There's no need to recalculate the rest of the attention matrix because they aren't required to generate the next token in the sequence. We apply similar reasoning to the value vectors, which we multiply by the attention pattern to get the output.
+
+How much computation did this save? We essentially removed an order of $$N$$ from each step, so now inference is $$O(N^2)$$! However, there is a trade-off here: the KV cache uses memory, growing linearly with sequence length. Using float32, 32 layers and 32 heads, each with 128-dim key/value vectors (numbers taken from Mistral 7B), each token occupies around 2MB in the KV cache. This would allow at most 4000 tokens to fit on a H100 with 80GB of VRAM.
+
+There are 2 ways to get around this:
+1. Reduce the number of KV vectors that need to be cached
+2. Reduce the size of the KV vectors that are cached
+
+### Grouped Query Attention
+[GQA](https://arxiv.org/pdf/2305.13245) is a method for reducing the number of KV vectors by forming groups, where multiple heads query the same KV vectors. This reduces the KV cache by whatever the group size is set to, balancing expressiveness against space complexity. If the grouped heads would have had similar KV vectors anyway, the degradation in performance should be minimal.
+
+<img src="/assets/images/blogtober/gqa.png" height="360px"/>
+
+### Quantization
+Floating point values can be reduced to 16-bit precision, or even 8-bit and below. This can naively reduce the size of the KV vectors, but the impact on performance will be unpredictable. A [recent paper](https://arxiv.org/pdf/2401.18079) explored this idea in great detail, for example by tuning each layer's precision based on its sensitivity to changes, and purportedly managed to scale to a 10 million context length on an 8-GPU system. I'd like to do a paper review on this later.
+
+### Low-rank
+Deepseek was trained to learn a linear compression of KV vectors into lower rank space, storing the corresponding latent vectors to be later up-projected for use in computation.
+
+### Sliding Window Attention
+Limit cache size
+
+### Linear attention
+Replace softmax, no need for caching whole sequence
+
+### RetNet / recurrent formulations
+
+### YOCO
+Fast prefill, only fully cache one layer, chunks
+
+### Titans / memory modules
+Replace full attention with short, long, and task components
+
+## Metrics
+- Throughput
+- Perpexity
+- Retrieval (needle/passkey)
+- LongBench
+- RULER
