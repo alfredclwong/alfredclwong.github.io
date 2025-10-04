@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+            padding: 10px;
+        }
+        
+        .container {
+            background: white;
+            /* border-radius: 10px; */
+            /* padding: 10px; */
+            /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); */
+            max-width: 700px;
+            width: 100%;
+        }
+        
+        h1 {
+            display: none;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+        
+        #canvas {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            background: #fafafa;
+            width: 300px;
+            height: 500px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        #playBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        #resetBtn {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        #resetBtn:hover {
+            background: #e0e0e0;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .legend-box {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #333;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 16px;
+            color: #666;
+            min-height: 24px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas" width="600" height="900"></canvas>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="controls">
+            <button id="playBtn">Play Animation</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box" style="background: rgba(147, 51, 234, 0.6);"></div>
+                <span>Input (X)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: rgba(59, 130, 246, 0.6);"></div>
+                <span>Query (Q)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: rgba(239, 68, 68, 0.6);"></div>
+                <span>Key (K)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: rgba(34, 197, 94, 0.6);"></div>
+                <span>Attention Score</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playBtn = document.getElementById('playBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const status = document.getElementById('status');
+        
+        const tokens = ['a', 'b', 'c', 'd', 'e', 'f'];
+        let currentStep = 0;
+        let isAnimating = false;
+        let animationId = null;
+        
+        const config = {
+            tokenWidth: 40,
+            tokenHeight: 50,
+            embeddingWidth: 80,
+            qkWidth: 60,
+            startX: 30,
+            startY: 30,
+            spacing: 60,
+            arrowColor: '#666',
+            fadedOpacity: 0.2,
+            normalOpacity: 0.8
+        };
+        
+        // Animation substeps: 0=X, 1=Q&K, 2=QK^T
+        let currentSubstep = 0;
+        
+        function drawRect(x, y, w, h, color, opacity = 1) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+            ctx.restore();
+        }
+        
+        function drawText(text, x, y, color = '#333', fontSize = 14) {
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+        
+        function drawArrow(x1, y1, x2, y2, label = '', opacity = 1) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.strokeStyle = config.arrowColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const headLen = 10;
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), 
+                      y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), 
+                      y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+            
+            if (label) {
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(midX - 20, midY - 10, 40, 20);
+                drawText(label, midX, midY, config.arrowColor, 12);
+            }
+            ctx.restore();
+        }
+        
+        function drawTokenSequence(numTokens, x, y, opacity = 1, highlightLast = false) {
+            for (let i = 0; i < numTokens; i++) {
+                const tokenY = y + i * (config.tokenHeight + 3);
+                const tokenOpacity = (highlightLast && i === numTokens - 1) ? opacity : opacity * 0.5;
+                drawRect(x, tokenY, config.tokenWidth, config.tokenHeight, 
+                        'rgba(147, 51, 234, 0.6)', tokenOpacity);
+                drawText(tokens[i], x + config.tokenWidth / 2, tokenY + config.tokenHeight / 2, 
+                        '#fff', 16);
+            }
+        }
+        
+        function drawEmbedding(numTokens, x, y, opacity = 1, showLabel = true, highlightLast = false) {
+            const height = numTokens * (config.tokenHeight + 3) - 3;
+            
+            // Draw previous tokens with lower opacity
+            if (highlightLast && numTokens > 1) {
+                const prevHeight = (numTokens - 1) * (config.tokenHeight + 3) - 3;
+                drawRect(x, y, config.embeddingWidth, prevHeight, 
+                        'rgba(147, 51, 234, 0.6)', opacity * 0.5);
+            }
+            
+            // Draw the new token portion with full opacity
+            if (highlightLast && numTokens > 1) {
+                const newY = y + (numTokens - 1) * (config.tokenHeight + 3);
+                const newHeight = config.tokenHeight;
+                drawRect(x, newY, config.embeddingWidth, newHeight, 
+                        'rgba(147, 51, 234, 0.6)', opacity);
+            } else {
+                drawRect(x, y, config.embeddingWidth, height, 
+                        'rgba(147, 51, 234, 0.6)', opacity);
+            }
+            
+            if (showLabel) {
+                drawText('X', x + config.embeddingWidth / 2, y + height / 2, 
+                        '#fff', 20);
+                drawText(`N × D`, x + config.embeddingWidth / 2, 
+                        y + height + 15, '#666', 11);
+            }
+        }
+        
+        function drawQueryKey(numTokens, x, y, opacity = 1, showLabel = true, highlightLast = false) {
+            const height = numTokens * (config.tokenHeight + 3) - 3;
+            const qX = x;
+            const kX = x + config.qkWidth + config.spacing;
+            
+            // Draw Q
+            if (highlightLast && numTokens > 1) {
+                const prevHeight = (numTokens - 1) * (config.tokenHeight + 3) - 3;
+                drawRect(qX, y, config.qkWidth, prevHeight, 
+                        'rgba(59, 130, 246, 0.6)', opacity * 0.5);
+                const newY = y + (numTokens - 1) * (config.tokenHeight + 3);
+                const newHeight = config.tokenHeight;
+                drawRect(qX, newY, config.qkWidth, newHeight, 
+                        'rgba(59, 130, 246, 0.6)', opacity);
+            } else {
+                drawRect(qX, y, config.qkWidth, height, 
+                        'rgba(59, 130, 246, 0.6)', opacity);
+            }
+            
+            if (showLabel) {
+                drawText('Q', qX + config.qkWidth / 2, y + height / 2, '#fff', 20);
+                drawText(`N × H`, qX + config.qkWidth / 2, y + height + 15, '#666', 11);
+            }
+            
+            // Draw K
+            if (highlightLast && numTokens > 1) {
+                const prevHeight = (numTokens - 1) * (config.tokenHeight + 3) - 3;
+                drawRect(kX, y, config.qkWidth, prevHeight, 
+                        'rgba(239, 68, 68, 0.6)', opacity * 0.5);
+                const newY = y + (numTokens - 1) * (config.tokenHeight + 3);
+                const newHeight = config.tokenHeight;
+                drawRect(kX, newY, config.qkWidth, newHeight, 
+                        'rgba(239, 68, 68, 0.6)', opacity);
+            } else {
+                drawRect(kX, y, config.qkWidth, height, 
+                        'rgba(239, 68, 68, 0.6)', opacity);
+            }
+            
+            if (showLabel) {
+                drawText('K', kX + config.qkWidth / 2, y + height / 2, '#fff', 20);
+                drawText(`N × H`, kX + config.qkWidth / 2, y + height + 15, '#666', 11);
+            }
+        }
+        
+        function drawAttentionScore(numTokens, x, y, opacity = 1, highlightLast = false, onlyQKT = false) {
+            const height = numTokens * (config.tokenHeight + 3) - 3;
+            
+            // Draw K^T (horizontal on top, aligned with QK^T grid)
+            const ktX = x + config.qkWidth + 15;
+            const ktY = y;
+            
+            if (highlightLast && numTokens > 1) {
+                const prevWidth = (numTokens - 1) * (config.tokenHeight + 3) - 3;
+                drawRect(ktX, ktY, prevWidth, config.qkWidth, 
+                        'rgba(239, 68, 68, 0.6)', opacity * 0.5);
+                const newX = ktX + prevWidth;
+                const newWidth = config.tokenHeight + 3;
+                drawRect(newX, ktY, newWidth, config.qkWidth, 
+                        'rgba(239, 68, 68, 0.6)', opacity);
+            } else {
+                drawRect(ktX, ktY, height, config.qkWidth, 
+                        'rgba(239, 68, 68, 0.6)', opacity);
+            }
+            
+            drawText('K^T', ktX + height / 2, ktY + config.qkWidth / 2, '#fff', 18);
+            drawText(`H × N`, ktX + height / 2, ktY - 10, '#666', 11);
+            
+            // Draw Q (vertical on left, aligned with QK^T grid)
+            const qX = x;
+            const qY = y + config.qkWidth + 15;
+            
+            if (highlightLast && numTokens > 1) {
+                const prevHeight = (numTokens - 1) * (config.tokenHeight + 3) - 3;
+                drawRect(qX, qY, config.qkWidth, prevHeight, 
+                        'rgba(59, 130, 246, 0.6)', opacity * 0.5);
+                const newY = qY + prevHeight;
+                const newHeight = config.tokenHeight + 3;
+                drawRect(qX, newY, config.qkWidth, newHeight, 
+                        'rgba(59, 130, 246, 0.6)', opacity);
+            } else {
+                drawRect(qX, qY, config.qkWidth, height, 
+                        'rgba(59, 130, 246, 0.6)', opacity);
+            }
+            
+            ctx.save();
+            ctx.globalAlpha = opacity;
+            ctx.translate(qX + config.qkWidth / 2, qY + height / 2);
+            ctx.rotate(-Math.PI / 2);
+            drawText('Q', 0, 0, '#fff', 18);
+            ctx.restore();
+            
+            // Only draw attention matrix if not onlyQKT mode (for substep 1)
+            if (!onlyQKT) {
+                // Draw attention matrix with causal mask
+                const attnX = ktX;
+                const attnY = qY;
+                
+                // Draw causal mask pattern
+                ctx.save();
+                const cellSize = height / numTokens;
+                for (let i = 0; i < numTokens; i++) {
+                    for (let j = 0; j <= i; j++) {
+                        const cx = attnX + j * cellSize;
+                        const cy = attnY + i * cellSize;
+                        const cellOpacity = (highlightLast && (i === numTokens - 1 || j === numTokens - 1)) ? opacity : opacity * 0.5;
+                        ctx.globalAlpha = cellOpacity;
+                        ctx.fillStyle = 'rgba(34, 197, 94, 0.6)';
+                        ctx.fillRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
+                    }
+                }
+                
+                // Draw border
+                ctx.globalAlpha = opacity * 0.3;
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+                ctx.fillRect(attnX, attnY, height, height);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(attnX, attnY, height, height);
+                ctx.restore();
+                
+                drawText('QK^T', attnX + height / 2, attnY + height / 2, '#fff', 18);
+                drawText(`N × N`, attnX + height / 2, attnY + height + 15, '#666', 11);
+            }
+        }
+        
+        function drawStep(step, substep) {
+            const maxTokens = tokens.length;
+            const maxHeight = maxTokens * (config.tokenHeight + 3) - 3;
+            const numTokens = step + 1;
+            
+            // Calculate centered positions based on max width
+            const totalWidth = config.tokenWidth + 15 + config.embeddingWidth + config.spacing + config.qkWidth + config.spacing + config.qkWidth;
+            const centerX = (canvas.width - totalWidth) / 2;
+            
+            const embX = centerX;
+            const tokenX = embX - config.tokenWidth - 15;
+            const tokenY = config.startY;
+            const embY = tokenY;
+            const qkX = embX + config.embeddingWidth + config.spacing;
+            const qkY = embY;
+            
+            const highlightNew = numTokens > 1;
+            
+            // Clear and redraw only at the start, or when moving to a new component
+            if (step === 0 && substep === 0) {
+                // Initial clear
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawTokenSequence(numTokens, tokenX, tokenY, config.normalOpacity, highlightNew);
+                drawEmbedding(numTokens, embX, embY, config.normalOpacity, true, highlightNew);
+            } else if (substep === 0) {
+                // Clear and redraw only the token sequence and X area
+                ctx.clearRect(tokenX - 5, tokenY - 5, config.tokenWidth + 10, maxHeight + 40);
+                ctx.clearRect(embX - 5, embY - 5, config.embeddingWidth + 10, maxHeight + 40);
+                drawTokenSequence(numTokens, tokenX, tokenY, config.normalOpacity, highlightNew);
+                drawEmbedding(numTokens, embX, embY, config.normalOpacity, true, highlightNew);
+            } else if (substep === 1) {
+                // Clear and redraw only the Q and K area
+                ctx.clearRect(qkX - 5, qkY - 5, config.qkWidth * 2 + config.spacing + 10, maxHeight + 40);
+                drawQueryKey(numTokens, qkX, qkY, config.normalOpacity, true, highlightNew);
+            } else if (substep === 2) {
+                // Clear and redraw only the QK^T area
+                const attnWidth = maxHeight + config.qkWidth + 15;
+                const attnCenterX = (canvas.width - attnWidth) / 2;
+                const attnY = tokenY + maxHeight + 100;
+                ctx.clearRect(attnCenterX - 5, attnY - 25, attnWidth + 10, maxHeight + config.qkWidth + 60);
+                drawAttentionScore(numTokens, attnCenterX, attnY, config.normalOpacity, highlightNew);
+            }
+            
+            // Update status
+            const stepNames = ['Adding token to sequence', 'Computing Q and K', 'Computing attention QK^T'];
+            status.textContent = `Step ${step + 1}/${tokens.length} - ${stepNames[substep]}: [${tokens.slice(0, numTokens).join(', ')}]`;
+        }
+        
+        async function animate() {
+            if (isAnimating) return;
+            isAnimating = true;
+            playBtn.disabled = true;
+            
+            for (let i = currentStep; i < tokens.length; i++) {
+                currentStep = i;
+                
+                // Substep 0: Add token to X
+                currentSubstep = 0;
+                drawStep(i, 0);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Substep 1: Show Q and K
+                currentSubstep = 1;
+                drawStep(i, 1);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Substep 2: Show QK^T
+                currentSubstep = 2;
+                drawStep(i, 2);
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            isAnimating = false;
+            playBtn.disabled = false;
+            status.textContent = 'Animation complete! Each token attends to all previous tokens (causal masking).';
+        }
+        
+        function reset() {
+            currentStep = 0;
+            currentSubstep = 0;
+            isAnimating = false;
+            playBtn.disabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            status.textContent = '';
+        }
+        
+        playBtn.addEventListener('click', animate);
+        resetBtn.addEventListener('click', reset);
+        
+        // Initial draw
+        drawStep(0, 0);
+        status.textContent = 'Click "Play Animation" to start';
+    </script>
+</body>
+</html>

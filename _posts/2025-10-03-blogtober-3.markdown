@@ -1,0 +1,45 @@
+---
+layout: post
+title: "[Blogtober #3] Efficient attention variants"
+date: 2025-10-03 08:56:00 +0100
+---
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+
+For my first technical post, I wanted to start with a recap of some transformer fundamentals. Lately I've been 
+interested in understanding how LLMs managed to balloon their context sizes from 1024 tokens in GPT2 to a whopping 2 
+million in Gemini 1.5 Pro. These are likely some of the intermediate adaptations that made this possible.
+
+## Vanilla attention
+A (causal) attention head takes an input matrix $$X \in \mathbb{R}^{N \times D}$$, consisting of $$N$$ tokens embedded 
+into $$D$$-dim space, and enriches each token embedding using information from previous tokens. The amount of 
+information transferred from token $$i$$ to $$j$$ is given by a scalar $$A_{ij}$$ within the $$N\times N$$ attention 
+matrix A. I'm sure you're familiar with the formulation:
+
+$$Q = X W_Q, K = X W_K, V = X W_V$$
+
+$$A = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)$$
+
+$$Z = AV, Y = Z W_O$$
+
+where $$W_Q,W_K,W_V \in \mathbb{R}^{D\times H}$$ are model weights which project $$X$$ into $$H$$-dim query/key/value space. The cosine similarities between each token pair's query and key vectors are normalised to form the attention matrix $$$$, which is in turn used to calculate a weighted average of the value vectors $$Z$$, which is finally projected back into $$D$$-dim space by $$W_O \in \mathbb{R}^{H\times D}$$.
+
+Let's count the matrix multiplications.
+- $$Q,K,V$$: $$3NDH$$
+- $$A$$: $$N^2H$$
+- $$Z$$: $$N^2H$$
+- $$Y$$: $$NHD$$
+
+We can see that the computational complexity grows as $$\mathcal{O}(N^2)$$ with sequence length. Even worse, during auto-regressive generation, the sequence length grows with each iteration! Generating a sequence of final length $$N$$ is $$\mathcal{O}(N^3)$$.
+
+<iframe src="/assets/html/attn-vis.html" width="100%" height="750" scrolling="no">
+
+- KV-cache, chunk, pre-fill
+- FlashAttention
+- MQA/GQA
+- Sliding window attention
+- RetNet
+- YOCO
+- Titans
