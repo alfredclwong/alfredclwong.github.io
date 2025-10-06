@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean Redeemed POS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-summary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-summary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .pipeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stage {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stage-header {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid;
+        }
+
+        .stage.ordering .stage-header {
+            color: #667eea;
+            border-color: #667eea;
+        }
+
+        .stage.payment .stage-header {
+            color: #f6ad55;
+            border-color: #f6ad55;
+        }
+
+        .stage.making .stage-header {
+            color: #48bb78;
+            border-color: #48bb78;
+        }
+
+        .stage.done .stage-header {
+            color: #9f7aea;
+            border-color: #9f7aea;
+        }
+
+        .order-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .order-id {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 3px;
+        }
+
+        .order-timestamp {
+            font-size: 0.7em;
+            color: #a0aec0;
+            margin-bottom: 8px;
+        }
+
+        .order-drink {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .order-syrups {
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .order-price {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #48bb78;
+            margin: 10px 0;
+        }
+
+        .complimentary-tag {
+            display: inline-block;
+            background: #fbd38d;
+            color: #744210;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .order-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-next {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-next:hover {
+            background: #5568d3;
+        }
+
+        .btn-delete {
+            background: #fc8181;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #f56565;
+        }
+
+        .ordering-controls {
+            display: grid;
+            gap: 15px;
+        }
+
+        .control-section {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .drink-btn, .syrup-btn, .comp-btn {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1em;
+        }
+
+        .drink-btn:hover, .syrup-btn:hover, .comp-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .drink-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .syrup-btn.selected {
+            background: #f6ad55;
+            color: white;
+            border-color: #f6ad55;
+        }
+
+        .comp-btn.selected {
+            background: #fbd38d;
+            color: #744210;
+            border-color: #f6ad55;
+        }
+
+        .add-order-btn {
+            width: 100%;
+            padding: 15px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .add-order-btn:hover:not(:disabled) {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .add-order-btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+
+        .summary-section {
+            margin-bottom: 20px;
+        }
+
+        .summary-label {
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .summary-item {
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .summary-total {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #48bb78;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .modal-close {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .modal-close:hover {
+            background: #5568d3;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #a0aec0;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .pipeline {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+        }
+
+        @media (orientation: landscape) and (max-width: 1024px) {
+            .pipeline {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>☕ Bean Redeemed</h1>
+            <p>Point of Sale System</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn-summary" onclick="showSummary()">📊 Daily Summary</button>
+            <button class="btn-reset" onclick="resetDaily()">🔄 Reset Daily Orders</button>
+        </div>
+
+        <div class="pipeline">
+            <!-- Ordering Stage -->
+            <div class="stage ordering">
+                <div class="stage-header">📝 Ordering</div>
+                <div class="ordering-controls">
+                    <div class="control-section">
+                        <div class="control-label">Select Drink:</div>
+                        <div class="button-grid">
+                            <button class="drink-btn" data-drink="Espresso" onclick="selectDrink('Espresso')">Espresso</button>
+                            <button class="drink-btn" data-drink="Americano" onclick="selectDrink('Americano')">Americano</button>
+                            <button class="drink-btn" data-drink="Dairy Latte" onclick="selectDrink('Dairy Latte')">Dairy Latte</button>
+                            <button class="drink-btn" data-drink="Oat Latte" onclick="selectDrink('Oat Latte')">Oat Latte</button>
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <div class="control-label">Add Syrups (optional):</div>
+                        <div class="button-grid">
+                            <button class="syrup-btn" data-syrup="Hazelnut" onclick="toggleSyrup('Hazelnut')">Hazelnut</button>
+                            <button class="syrup-btn" data-syrup="Vanilla" onclick="toggleSyrup('Vanilla')">Vanilla</button>
+                            <button class="syrup-btn" data-syrup="Caramel" onclick="toggleSyrup('Caramel')">Caramel</button>
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <button class="comp-btn" onclick="toggleComplimentary()">🎁 Complimentary</button>
+                    </div>
+
+                    <button class="add-order-btn" onclick="addOrder()" id="addOrderBtn" disabled>Add to Order</button>
+                </div>
+            </div>
+
+            <!-- Payment Stage -->
+            <div class="stage payment">
+                <div class="stage-header">💳 Payment</div>
+                <div id="paymentOrders"></div>
+            </div>
+
+            <!-- Making Stage -->
+            <div class="stage making">
+                <div class="stage-header">☕ Making</div>
+                <div id="makingOrders"></div>
+            </div>
+
+            <!-- Done Stage -->
+            <div class="stage done">
+                <div class="stage-header">✅ Done</div>
+                <div id="doneOrders"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div class="modal" id="summaryModal">
+        <div class="modal-content">
+            <div class="modal-header">📊 Daily Summary</div>
+            <div id="summaryContent"></div>
+            <button class="modal-close" onclick="closeSummary()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const PRICES = {
+            'Espresso': 2.00,
+            'Americano': 2.00,
+            'Dairy Latte': 2.50,
+            'Oat Latte': 2.50,
+            'Hazelnut': 0.25,
+            'Vanilla': 0.25,
+            'Caramel': 0.25
+        };
+
+        let currentOrder = {
+            drink: null,
+            syrups: [],
+            complimentary: false
+        };
+
+        let orders = {
+            payment: [],
+            making: [],
+            done: []
+        };
+
+        let orderCounter = 1;
+
+        // Load orders from localStorage
+        function loadOrders() {
+            const saved = localStorage.getItem('beanRedeemedOrders');
+            const savedCounter = localStorage.getItem('beanRedeemedOrderCounter');
+            if (saved) {
+                orders = JSON.parse(saved);
+                renderAllOrders();
+            }
+            if (savedCounter) {
+                orderCounter = parseInt(savedCounter);
+            }
+        }
+
+        // Save orders to localStorage
+        function saveOrders() {
+            localStorage.setItem('beanRedeemedOrders', JSON.stringify(orders));
+            localStorage.setItem('beanRedeemedOrderCounter', orderCounter.toString());
+        }
+
+        function selectDrink(drink) {
+            currentOrder.drink = drink;
+            document.querySelectorAll('.drink-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.drink === drink);
+            });
+            updateAddButton();
+        }
+
+        function toggleSyrup(syrup) {
+            const index = currentOrder.syrups.indexOf(syrup);
+            if (index > -1) {
+                currentOrder.syrups.splice(index, 1);
+            } else {
+                currentOrder.syrups.push(syrup);
+            }
+            document.querySelector(`[data-syrup="${syrup}"]`).classList.toggle('selected');
+            updateAddButton();
+        }
+
+        function toggleComplimentary() {
+            currentOrder.complimentary = !currentOrder.complimentary;
+            document.querySelector('.comp-btn').classList.toggle('selected');
+            updateAddButton();
+        }
+
+        function updateAddButton() {
+            const btn = document.getElementById('addOrderBtn');
+            btn.disabled = !currentOrder.drink;
+        }
+
+        function generateId() {
+            return (orderCounter++).toString();
+        }
+
+        function calculatePrice(order) {
+            if (order.complimentary) return 0;
+            let price = PRICES[order.drink];
+            order.syrups.forEach(syrup => {
+                price += PRICES[syrup];
+            });
+            return price;
+        }
+
+        function addOrder() {
+            if (!currentOrder.drink) return;
+
+            const order = {
+                id: generateId(),
+                timestamp: new Date().toISOString(),
+                drink: currentOrder.drink,
+                syrups: [...currentOrder.syrups],
+                complimentary: currentOrder.complimentary,
+                stage: currentOrder.complimentary ? 'making' : 'payment'
+            };
+
+            if (currentOrder.complimentary) {
+                orders.making.push(order);
+            } else {
+                orders.payment.push(order);
+            }
+            saveOrders();
+            renderAllOrders();
+
+            // Reset current order
+            currentOrder = {
+                drink: null,
+                syrups: [],
+                complimentary: false
+            };
+            document.querySelectorAll('.drink-btn, .syrup-btn, .comp-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            updateAddButton();
+        }
+
+        function moveOrder(orderId, fromStage, toStage) {
+            const orderIndex = orders[fromStage].findIndex(o => o.id === orderId);
+            if (orderIndex > -1) {
+                const order = orders[fromStage].splice(orderIndex, 1)[0];
+                if (toStage) {
+                    order.stage = toStage;
+                    orders[toStage].push(order);
+                }
+                saveOrders();
+                renderAllOrders();
+            }
+        }
+
+        function deleteOrder(orderId, stage) {
+            const orderIndex = orders[stage].findIndex(o => o.id === orderId);
+            if (orderIndex > -1) {
+                orders[stage].splice(orderIndex, 1);
+                saveOrders();
+                renderAllOrders();
+            }
+        }
+
+        function renderOrder(order) {
+            const price = calculatePrice(order);
+            const syrups = order.syrups.length > 0 ? order.syrups.join(', ') : 'No syrups';
+            
+            let nextStage = '';
+            let nextLabel = '';
+            if (order.stage === 'payment') {
+                nextStage = 'making';
+                nextLabel = 'Payment Taken';
+            } else if (order.stage === 'making') {
+                nextStage = 'done';
+                nextLabel = 'Complete';
+            } else if (order.stage === 'done') {
+                nextStage = null;
+                nextLabel = 'Archive';
+            }
+
+            const timestamp = new Date(order.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+            return `
+                <div class="order-card">
+                    <div class="order-id">Order #${order.id}</div>
+                    <div class="order-timestamp">${timestamp}</div>
+                    <div class="order-drink">${order.drink}</div>
+                    <div class="order-syrups">Syrups: ${syrups}</div>
+                    ${order.complimentary ? '<div class="complimentary-tag">🎁 Complimentary</div>' : ''}
+                    <div class="order-price">£${price.toFixed(2)}</div>
+                    <div class="order-actions">
+                        ${nextStage !== null ? `<button class="btn-next" onclick="moveOrder('${order.id}', '${order.stage}', '${nextStage}')">${nextLabel}</button>` : ''}
+                        <button class="btn-delete" onclick="deleteOrder('${order.id}', '${order.stage}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAllOrders() {
+            const paymentEl = document.getElementById('paymentOrders');
+            const makingEl = document.getElementById('makingOrders');
+            const doneEl = document.getElementById('doneOrders');
+
+            paymentEl.innerHTML = orders.payment.length > 0 
+                ? orders.payment.map(renderOrder).join('') 
+                : '<div class="empty-state">No orders awaiting payment</div>';
+
+            makingEl.innerHTML = orders.making.length > 0 
+                ? orders.making.map(renderOrder).join('') 
+                : '<div class="empty-state">No orders being made</div>';
+
+            doneEl.innerHTML = orders.done.length > 0 
+                ? orders.done.map(renderOrder).join('') 
+                : '<div class="empty-state">No completed orders</div>';
+        }
+
+        function showSummary() {
+            const allOrders = [...orders.payment, ...orders.making, ...orders.done];
+            
+            const orderCounts = {};
+            let totalRevenue = 0;
+
+            allOrders.forEach(order => {
+                const key = JSON.stringify({
+                    drink: order.drink,
+                    syrups: order.syrups.sort(),
+                    complimentary: order.complimentary
+                });
+
+                if (!orderCounts[key]) {
+                    orderCounts[key] = {
+                        drink: order.drink,
+                        syrups: order.syrups,
+                        complimentary: order.complimentary,
+                        count: 0,
+                        revenue: 0
+                    };
+                }
+
+                orderCounts[key].count++;
+                const price = calculatePrice(order);
+                orderCounts[key].revenue += price;
+                totalRevenue += price;
+            });
+
+            let summaryHTML = '<div class="summary-section">';
+            summaryHTML += '<div class="summary-label">Order Breakdown:</div>';
+
+            const items = Object.values(orderCounts);
+            if (items.length === 0) {
+                summaryHTML += '<div class="empty-state">No orders today</div>';
+            } else {
+                items.forEach(item => {
+                    const syrups = item.syrups.length > 0 ? ` + ${item.syrups.join(', ')}` : '';
+                    const comp = item.complimentary ? ' (Complimentary)' : '';
+                    summaryHTML += `
+                        <div class="summary-item">
+                            <span>${item.drink}${syrups}${comp}</span>
+                            <span><strong>×${item.count}</strong> - £${item.revenue.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            summaryHTML += '</div>';
+            summaryHTML += `<div class="summary-total">Total Revenue: £${totalRevenue.toFixed(2)}</div>`;
+
+            document.getElementById('summaryContent').innerHTML = summaryHTML;
+            document.getElementById('summaryModal').classList.add('active');
+        }
+
+        function closeSummary() {
+            document.getElementById('summaryModal').classList.remove('active');
+        }
+
+        function resetDaily() {
+            if (confirm('Are you sure you want to reset all daily orders? This cannot be undone.')) {
+                orders = {
+                    payment: [],
+                    making: [],
+                    done: []
+                };
+                orderCounter = 1;
+                saveOrders();
+                renderAllOrders();
+            }
+        }
+
+        // Initialize
+        loadOrders();
+    </script>
+</body>
+</html>
