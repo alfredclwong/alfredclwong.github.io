@@ -1,0 +1,77 @@
+---
+layout: post
+title: "[Blogtober #4] Some self-help thoughts"
+date: 2025-10-06 19:15:00 +0100
+---
+<link rel="stylesheet" href="/assets/css/style.css">
+
+The self-help industry is notorious for peddling oversimplified solutions and one-size-fits-all approaches. Yet buried beneath the motivational fluff and questionable promises, there are genuinely useful frameworks and techniques. The challenge is finding what actually works for you as an individual.
+
+Over the course of my career break, I've experimented with various productivity systems, reflection tools, and habit-forming techniques. Most didn't stick, but a few became foundational to how I organise my life and work.
+
+## 12 Week Year: Breaking the Procrastination Cycle
+
+The 12 Week Year framework divides your year into four 12-week cycles with 1-week breaks between them. This might sound like simple maths, but the psychological impact is profound.
+
+I recognised my procrastination pattern back in university: I'd coast for months, then scramble frantically as exams approached. This boom-and-bust cycle was exhausting, ineffective, and not at all uncommon. The 12 Week Year disrupts this pattern by creating artificial urgency every three months instead of waiting for annual reckonings or distant deadlines.
+
+What makes this superior to traditional New Year's resolutions is the built-in reset mechanism. Instead of abandoning goals after a February slip-up, you get four fresh starts per year. The shorter timeline also forces you to be more realistic about what you can actually accomplish, leading to better planning and higher completion rates.
+
+The framework keeps me consistently goal-oriented rather than letting weeks drift by without clear direction. Also, dividing your personal life up into "Quarters" makes you sound professional and efficient - like a boss.
+
+<img src="/assets/images/blogtober/boss.png" height="240px"/>
+
+## Wheel of Life: Structured Self-Reflection
+
+The Wheel of Life is a simple but powerful tool for quantitative self-reflection. It works by rating each of 9 categories using a score from 1-10: Romance, Family, Friends, Growth, Money, Mission, Body, Mind, and Soul. These naturally cluster into three broad areas: People (Romance, Family, Friends), Career (Growth, Money, Mission), and Self (Body, Mind, Soul).
+
+The real value I found in this was integrating it into my 12-week cycle. Each cycle, I reflect on how these scores have changed since the last cycle. More importantly, I ask myself why they've changed, and choose which ones I want to prioritise in the next cycle. This process reveals patterns I might otherwise miss: maybe I've been neglecting friendships while focused on work, or perhaps I've been so busy with external goals that I've ignored my mental health.
+
+I've also found this to be an excellent relationship tool. Sharing these reflections with my partner creates structured conversations about life balance and mutual support. Sometimes changes in our lives are like slowly shifting tectonic plates - monumental but barely noticeable in the moment. The Wheel helps to avoid burying these continental drifts under the rubble of daily logistics and surface-level check-ins.
+
+## Daily Journaling: Preventing Mental Drift
+
+I think of daily journaling as "anti-rot" for the mind. The format is deliberately flexible: some days it's a diary for processing tangled emotional states, other days it's a technical notebook for maths problems, and sometimes it's just a time-tracker to maintain accountability.
+
+The only rule is to write something, anything, every day. This simple practice creates a continuous thread of self-awareness that prevents days from blurring together meaninglessly. When I review a 12-week cycle, these daily entries provide the raw material for understanding what actually happened versus what I thought happened.
+
+The accountability aspect is surprisingly powerful. When I write down "0815 Wake up" and then "1000 Get up", I'm instantly repulsed by the doomscrolling that precipitated it. This awareness alone has been an incredible preventative measure in a world of brainrot and time wasting.
+
+My ridiculously nerdy, moderately incoherent way of describing this is some combination between the Kobe mentality, Warren Buffett's investing advice, and the ReLU function. You're trying to get 1% better every day, but some days you might do something harmful and instead get 5% worse. By employing preventative measures, you curb your negative days, preventing downturns, allowing yourself to compound positively over time.
+
+## Quality Network: You Are Your Company
+
+The old saying "you're the average of your five closest friends" might be cliché, but it's also measurably true. Your social network shapes your thinking, opportunities, and even your daily habits in ways that are often invisible until you step back and analyse the patterns.
+
+A quality network provides multiple forms of value: inspiration when you're stuck, learning opportunities through diverse perspectives, mental health support during difficult periods, career opportunities through connections, direction when you're uncertain about next steps, encouragement when facing challenges, and simply fun to balance out life's serious moments.
+
+The key insight is that this happens passively through regular interaction, not through forced networking events or transactional relationships. The people you spend time with regularly influence your standards, ambitions, and worldview whether you realise it or not.
+
+This doesn't mean being calculating about friendships, but it does mean being intentional about investing time in relationships that elevate rather than drain you. Sometimes this means difficult conversations about boundaries, and sometimes it means gradually shifting how you spend your social energy.
+
+## What Doesn't Work (For Me)
+
+Not every popular productivity technique survives contact with reality. Here are some approaches I've tried and abandoned:
+
+**Early morning routines**: Despite endless content about 5 AM wake-ups and morning rituals, I've accepted that I'm simply not a morning person. Fighting my natural rhythm created more stress than benefit. I do better with a gentler morning approach and peak productivity later in the day.
+
+**Detailed time tracking**: I tried using Toggl for a while to more accurately track how I was spending my time, but I found that the additional overhead was counterproductive. Instead, fitting this into my daily journal in a flexible manner worked well for me.
+
+**Rigid planning**: In the same vein, detailed schedules and strict daily agendas never really held up for me. I've found that loose structure with flexible execution works much better for my personality and work style.
+
+**Dopamine optimisation**: There's a Huberman Podcast episode on managing dopamine levels, but I haven't yet found a way to integrate this into my personal system. This is probably more due to lack of effort on my part - it's on my todo list.
+
+## The Meta-Principle: Build Your Own System
+
+The real insight from years of self-help experimentation isn't any single technique, but rather the process of finding what works for you specifically. This requires a experimental mindset: try many approaches, extract the underlying principles, and gradually build your own system.
+
+The key is identifying tools that address your particular weaknesses while amplifying your existing strengths. My system works because it targets my specific tendencies: the 12 Week Year counters my procrastination, the Wheel of Life addresses my tendency to neglect life balance, daily journaling prevents my natural drift toward unconscious habits, and network intentionality leverages my extraversion.
+
+Most self-help content is questionable at the surface level, filled with grandiose promises and oversimplified solutions. But if you can cut through the marketing and extract the core principles, there are genuinely useful ideas buried in even the most dubious sources. The trick is maintaining healthy skepticism while remaining open to experimentation.
+
+Building a personal system is itself a skill that improves with practice. Start small, be consistent with measurement, and be ruthless about discarding what doesn't work. Over time, you'll develop an intuitive sense for what types of interventions are likely to stick and which are just productivity theater.
+
+## References
+1. [12 Week Year](https://12weekyear.com/)
+2. [Wheel of Life](https://youtube.com/shorts/QOvIzsn7fD8?si=EU3jJqgL9SlS8C_U) (originally attributed to Paul J. Meyer)
+3. [Huberman on Dopamine](https://youtu.be/QmOF0crdyRU?si=wUXC86wW3OmpKIc3)

@@ -14,19 +14,19 @@ date: 2025-10-02 19:02:00 +0100
 
 As a kid, I spent most of my time solving maths problems, playing in chess tournaments, and practising music. I did well enough in each of these, but there was always a nagging feeling that I could never quite push over the hump into “true excellence.” In maths, I was invited to an IMO training camp but never made the team. In chess, I played on the national squad but was a dirty 1.e4 player and the weakest member of my school team. In music, I became technically proficient but never had the drive or passion to commit to the long hours of practice it really demanded.
 
-During this time, I lost my mum to cancer. It was a painful period, and it planted in me a desire to work on healthcare-related problems. But I also felt like my skillset wasn’t well suited to medicine — especially with my poor memory recall, which I knew would be a problem. In the end, I stuck to what I knew: maths. It was a source of comfort.
+During this time, I lost my mum to cancer. It was a painful period, and it planted in me a desire to work on healthcare-related problems. But I also felt like my skillset wasn’t well suited to medicine - especially with my poor memory recall, which I knew would be a problem. In the end, I stuck to what I knew: maths. It was a source of comfort.
 
-I considered applying to study Engineering at university, but it felt like a high-variance option — I had no idea what to expect from the interviews. Cambridge maths admissions, by contrast, were known for being straightforward but tough. So I went for it and got into Trinity to study maths.
+I considered applying to study Engineering at university, but it felt like a high-variance option - I had no idea what to expect from the interviews. Cambridge maths admissions, by contrast, were known for being straightforward but tough. So I went for it and got into Trinity to study maths.
 
-I still vividly remember stumbling across Andrew Ng’s Coursera course on ML back in 2012, while on a family holiday in Hong Kong. I was excited — like, “I just trained a net to recognise handwritten numbers, how cool is that?!” — but no one around me seemed particularly impressed, and I didn’t take it any further.
+I still vividly remember stumbling across Andrew Ng’s Coursera course on ML back in 2012, while on a family holiday in Hong Kong. I was excited - like, “I just trained a net to recognise handwritten numbers, how cool is that?!” - but no one around me seemed particularly impressed, and I didn’t take it any further.
 
 ### Uni
 
-University maths was tough. In my first year, I was more excited about finally having the chance to play sports. Growing up, my weekends were always taken up by Chinese school and church, so I’d never had time. I jumped into rowing and basketball, and caught up on sleep during lectures. Unsurprisingly, I tanked — finishing with a 2:2.
+University maths was tough. In my first year, I was more excited about finally having the chance to play sports. Growing up, my weekends were always taken up by Chinese school and church, so I’d never had time. I jumped into rowing and basketball, and caught up on sleep during lectures. Unsurprisingly, I tanked - finishing with a 2:2.
 
 In second year, I realised I didn’t see a future in pure maths. I had no desire to become an academic, and figured that for real-world work, there was only so much maths you really needed. I put in the effort to recover from my first year, managed to scrape a 2:1, and transferred into Engineering, hoping to do something more practical.
 
-When I got to the Engineering department, I was overwhelmed by choice: quantum computing, nuclear energy, bridge building, medical imaging, cars, planes — you name it. I really enjoyed working in labs and collaborating with others. I took a wide range of modules but gravitated towards electrical engineering, AI, and medical applications. My favourite course was Computational Neuroscience — a sweet spot at the intersection of maths, medicine, and computing. Working on things I actually enjoyed paid off: I got a first.
+When I got to the Engineering department, I was overwhelmed by choice: quantum computing, nuclear energy, bridge building, medical imaging, cars, planes - you name it. I really enjoyed working in labs and collaborating with others. I took a wide range of modules but gravitated towards electrical engineering, AI, and medical applications. My favourite course was Computational Neuroscience - a sweet spot at the intersection of maths, medicine, and computing. Working on things I actually enjoyed paid off: I got a first.
 
 Fourth year was disrupted by COVID. I’d been working towards a career in AI with a dissertation on causal inference and counterfactuals in clinical trials, but my supervisor was already stretched thin managing her group, and after the pandemic hit, contact hours disappeared. The internships and fellowships I applied to were cancelled, and I ended the year feeling pretty demoralised.
 
@@ -36,13 +36,13 @@ After that, I wanted a break from AI but was still interested in research. I’d
 
 Unfortunately, Microsoft pulled funding for the role and I had to move on.
 
-Around this time, I was curious about the food industry and had no clear direction, so I reached out to a friend who had helped start a food stall in Spitalfields Market selling biang biang noodles. I worked there for six months and quickly discovered that kitchen work is intense — something I’m happy to leave to the pros. After a near-death experience (a story for another time), I decided it was time to return to something more stable.
+Around this time, I was curious about the food industry and had no clear direction, so I reached out to a friend who had helped start a food stall in Spitalfields Market selling biang biang noodles. I worked there for six months and quickly discovered that kitchen work is intense - something I’m happy to leave to the pros. After a near-death experience (a story for another time), I decided it was time to return to something more stable.
 
 Many of my friends from the maths course had gone into quant finance. One of them referred me to Optiver, a high-frequency trading firm. I passed the interviews and was offered a spot in the next grad cycle, starting in six months. I used that time to intern at a systematic hedge fund, helping build signals for an FX strategy.
 
-My time at Optiver was... intense. I started strong — mainly thanks to an ability not to panic under pressure — and was soon trading my own product on the main European index options desk. The trainee programme was exceptional, but once I graduated to the trading floor I increasingly found the workload exhausting. Intense screen trading during market hours followed by late-night research took its toll. Burnout crept in.
+My time at Optiver was... intense. I started strong - mainly thanks to an ability not to panic under pressure - and was soon trading my own product on the main European index options desk. The trainee programme was exceptional, but once I graduated to the trading floor I increasingly found the workload exhausting. Intense screen trading during market hours followed by late-night research took its toll. Burnout crept in.
 
-I also became disillusioned with certain aspects of the role and the company (something I might write more about in another post). After about 18 months, I left — without a clear plan for what to do next.
+I also became disillusioned with certain aspects of the role and the company (something I might write more about in another post). After about 18 months, I left - without a clear plan for what to do next.
 
 ### Break
 
@@ -54,7 +54,7 @@ I also caught the AI wave and started self-teaching out of curiosity. I began wi
 
 I got in touch with a tiny startup working on agentic codegen and helped fine-tune a (questionable) diff model for them. I also reached out to a neuroscience professor at Oxford and began a collaboration training models on survival time data in long-term clinical trials.
 
-I kept building. I replicated several research papers — most recently AlphaEvolve, and managed to achieve SOTA on a circle packing problem using my own implementation.
+I kept building. I replicated several research papers - most recently AlphaEvolve, and managed to achieve SOTA on a circle packing problem using my own implementation.
 
 ### Interviews
 
@@ -66,8 +66,8 @@ The second was at a drug discovery company in London, which was a much more enjo
 
 ### Now
 
-So here I am — simultaneously encouraged and discouraged by these half-successes. At times, I’ve felt foolish or useless for attempting this career change. But I’m drawn to these problems in a way I can’t ignore, and I don’t see myself looking elsewhere anytime soon. So I stubbornly keep moving forward.
+So here I am - simultaneously encouraged and discouraged by these half-successes. At times, I’ve felt foolish or useless for attempting this career change. But I’m drawn to these problems in a way I can’t ignore, and I don’t see myself looking elsewhere anytime soon. So I stubbornly keep moving forward.
 
-Right now, I’m working on patching some of the gaps that came up during interviews. I want to write up explainers on areas I was weak in, and build smaller projects that give me more experience. I’ve also come to realise that ML roles are becoming increasingly specialised, and I’d benefit from narrowing my focus — something I hadn’t seriously considered before. I have to keep telling myself that this is the difficult part, and it only gets better from here, but ultimately I feel lucky to be working towards something I'm deeply interested in.
+Right now, I’m working on patching some of the gaps that came up during interviews. I want to write up explainers on areas I was weak in, and build smaller projects that give me more experience. I’ve also come to realise that ML roles are becoming increasingly specialised, and I’d benefit from narrowing my focus - something I hadn’t seriously considered before. I have to keep telling myself that this is the difficult part, and it only gets better from here, but ultimately I feel lucky to be working towards something I'm deeply interested in.
 
 <img src="/assets/images/blogtober/fresh-prince.png" height="360px"/>
