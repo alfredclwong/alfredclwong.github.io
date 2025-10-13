@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #D2691E 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -55,22 +55,32 @@
         }
 
         .btn-summary {
-            background: #48bb78;
+            background: #D2691E;
             color: white;
         }
 
         .btn-summary:hover {
-            background: #38a169;
+            background: #CD853F;
             transform: translateY(-2px);
         }
 
         .btn-reset {
-            background: #f56565;
+            background: #A0522D;
             color: white;
         }
 
         .btn-reset:hover {
-            background: #e53e3e;
+            background: #8B4513;
+            transform: translateY(-2px);
+        }
+
+        .btn-export {
+            background: #8B4513;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #654321;
             transform: translateY(-2px);
         }
 
@@ -97,23 +107,23 @@
         }
 
         .stage.ordering .stage-header {
-            color: #667eea;
-            border-color: #667eea;
+            color: #8B4513;
+            border-color: #8B4513;
         }
 
         .stage.payment .stage-header {
-            color: #f6ad55;
-            border-color: #f6ad55;
+            color: #D2691E;
+            border-color: #D2691E;
         }
 
         .stage.making .stage-header {
-            color: #48bb78;
-            border-color: #48bb78;
+            color: #A0522D;
+            border-color: #A0522D;
         }
 
         .stage.done .stage-header {
-            color: #9f7aea;
-            border-color: #9f7aea;
+            color: #CD853F;
+            border-color: #CD853F;
         }
 
         .order-card {
@@ -121,7 +131,7 @@
             border-radius: 15px;
             padding: 15px;
             margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #8B4513;
         }
 
         .order-id {
@@ -153,14 +163,14 @@
         .order-price {
             font-size: 1.3em;
             font-weight: 700;
-            color: #48bb78;
+            color: #8B4513;
             margin: 10px 0;
         }
 
         .complimentary-tag {
             display: inline-block;
-            background: #fbd38d;
-            color: #744210;
+            background: #DEB887;
+            color: #654321;
             padding: 4px 12px;
             border-radius: 12px;
             font-size: 0.85em;
@@ -185,12 +195,12 @@
         }
 
         .btn-next {
-            background: #667eea;
+            background: #8B4513;
             color: white;
         }
 
         .btn-next:hover {
-            background: #5568d3;
+            background: #654321;
         }
 
         .btn-delete {
@@ -241,27 +251,27 @@
         }
 
         .drink-btn.selected {
-            background: #667eea;
+            background: #8B4513;
             color: white;
-            border-color: #667eea;
+            border-color: #8B4513;
         }
 
         .syrup-btn.selected {
-            background: #f6ad55;
+            background: #D2691E;
             color: white;
-            border-color: #f6ad55;
+            border-color: #D2691E;
         }
 
         .comp-btn.selected {
-            background: #fbd38d;
-            color: #744210;
-            border-color: #f6ad55;
+            background: #CD853F;
+            color: white;
+            border-color: #A0522D;
         }
 
         .add-order-btn {
             width: 100%;
             padding: 15px;
-            background: #48bb78;
+            background: #8B4513;
             color: white;
             border: none;
             border-radius: 12px;
@@ -273,13 +283,28 @@
         }
 
         .add-order-btn:hover:not(:disabled) {
-            background: #38a169;
+            background: #654321;
             transform: translateY(-2px);
         }
 
         .add-order-btn:disabled {
             background: #cbd5e0;
             cursor: not-allowed;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1em;
+            margin-bottom: 10px;
+            transition: border-color 0.2s ease;
+        }
+
+        .name-input:focus {
+            outline: none;
+            border-color: #8B4513;
         }
 
         .modal {
@@ -339,7 +364,7 @@
         .summary-total {
             font-size: 1.5em;
             font-weight: 700;
-            color: #48bb78;
+            color: #8B4513;
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px solid #e2e8f0;
@@ -348,7 +373,7 @@
         .modal-close {
             width: 100%;
             padding: 12px;
-            background: #667eea;
+            background: #8B4513;
             color: white;
             border: none;
             border-radius: 12px;
@@ -359,7 +384,7 @@
         }
 
         .modal-close:hover {
-            background: #5568d3;
+            background: #654321;
         }
 
         .empty-state {
@@ -394,8 +419,9 @@
         </header>
 
         <div class="controls">
-            <button class="btn-summary" onclick="showSummary()">📊 Daily Summary</button>
-            <button class="btn-reset" onclick="resetDaily()">🔄 Reset Daily Orders</button>
+            <button class="btn-summary" onclick="showSummary()">📊 Summary</button>
+            <button class="btn-export" onclick="exportToSpreadsheet()">📋 Export</button>
+            <button class="btn-reset" onclick="resetDaily()">🔄 Reset</button>
         </div>
 
         <div class="pipeline">
@@ -424,6 +450,11 @@
 
                     <div class="control-section">
                         <button class="comp-btn" onclick="toggleComplimentary()">🎁 Complimentary</button>
+                    </div>
+
+                    <div class="control-section">
+                        <div class="control-label">Customer Name (optional):</div>
+                        <input type="text" class="name-input" id="customerName" placeholder="Enter customer name">
                     </div>
 
                     <button class="add-order-btn" onclick="addOrder()" id="addOrderBtn" disabled>Add to Order</button>
@@ -473,7 +504,8 @@
         let currentOrder = {
             drink: null,
             syrups: [],
-            complimentary: false
+            complimentary: false,
+            name: ''
         };
 
         let orders = {
@@ -549,12 +581,15 @@
         function addOrder() {
             if (!currentOrder.drink) return;
 
+            const customerName = document.getElementById('customerName').value.trim();
+
             const order = {
                 id: generateId(),
                 timestamp: new Date().toISOString(),
                 drink: currentOrder.drink,
                 syrups: [...currentOrder.syrups],
                 complimentary: currentOrder.complimentary,
+                name: customerName,
                 stage: currentOrder.complimentary ? 'making' : 'payment'
             };
 
@@ -570,11 +605,13 @@
             currentOrder = {
                 drink: null,
                 syrups: [],
-                complimentary: false
+                complimentary: false,
+                name: ''
             };
             document.querySelectorAll('.drink-btn, .syrup-btn, .comp-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
+            document.getElementById('customerName').value = '';
             updateAddButton();
         }
 
@@ -621,7 +658,7 @@
 
             return `
                 <div class="order-card">
-                    <div class="order-id">Order #${order.id}</div>
+                    <div class="order-id">Order #${order.id}${order.name ? ` - ${order.name}` : ''}</div>
                     <div class="order-timestamp">${timestamp}</div>
                     <div class="order-drink">${order.drink}</div>
                     <div class="order-syrups">Syrups: ${syrups}</div>
@@ -710,6 +747,98 @@
 
         function closeSummary() {
             document.getElementById('summaryModal').classList.remove('active');
+        }
+
+        function exportToSpreadsheet() {
+            const allOrders = [...orders.payment, ...orders.making, ...orders.done];
+            
+            if (allOrders.length === 0) {
+                alert('No orders to export!');
+                return;
+            }
+
+            // Get all unique drinks and syrups
+            const drinks = [...new Set(allOrders.map(order => order.drink))].sort();
+            const syrups = [...new Set(allOrders.flatMap(order => order.syrups))].sort();
+            
+            // If no syrups, add "No Syrup" column
+            if (syrups.length === 0) {
+                syrups.push('No Syrup');
+            }
+
+            // Create data grid
+            const data = {};
+            let totalRevenue = 0;
+
+            // Initialize grid
+            drinks.forEach(drink => {
+                data[drink] = {};
+                syrups.forEach(syrup => {
+                    data[drink][syrup] = { regular: 0, complimentary: 0 };
+                });
+                data[drink]['No Syrup'] = { regular: 0, complimentary: 0 };
+            });
+
+            // Populate grid with order data
+            allOrders.forEach(order => {
+                const price = calculatePrice(order);
+                totalRevenue += price;
+                
+                if (order.syrups.length === 0) {
+                    if (order.complimentary) {
+                        data[order.drink]['No Syrup'].complimentary++;
+                    } else {
+                        data[order.drink]['No Syrup'].regular++;
+                    }
+                } else {
+                    order.syrups.forEach(syrup => {
+                        if (order.complimentary) {
+                            data[order.drink][syrup].complimentary++;
+                        } else {
+                            data[order.drink][syrup].regular++;
+                        }
+                    });
+                }
+            });
+
+            // Create CSV content
+            let csvContent = 'Daily Orders Export - ' + new Date().toLocaleDateString() + '\n\n';
+            
+            // Header row
+            csvContent += 'Drink Type,' + [...syrups, 'No Syrup'].join(',') + '\n';
+            
+            // Data rows
+            drinks.forEach(drink => {
+                const row = [drink];
+                [...syrups, 'No Syrup'].forEach(syrup => {
+                    const regular = data[drink][syrup].regular;
+                    const comp = data[drink][syrup].complimentary;
+                    let cellValue = regular.toString();
+                    if (comp > 0) {
+                        cellValue += ` (${comp})`;
+                    }
+                    row.push(cellValue);
+                });
+                csvContent += row.join(',') + '\n';
+            });
+
+            csvContent += '\n';
+            csvContent += 'Total Revenue,£' + totalRevenue.toFixed(2) + '\n';
+            csvContent += 'Total Orders,' + allOrders.length + '\n';
+            csvContent += 'Complimentary Orders,' + allOrders.filter(o => o.complimentary).length + '\n';
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `bean-redeemed-orders-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('Order data exported successfully! The CSV file can be opened in Excel or Google Sheets.');
         }
 
         function resetDaily() {
