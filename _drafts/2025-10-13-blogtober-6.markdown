@@ -1,0 +1,65 @@
+---
+layout: post
+title: "[Blogtober #6] Confidence"
+date: 2025-10-13 18:01:00 +0100
+---
+<script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<link rel="stylesheet" href="/assets/css/style.css">
+
+Intro
+- I was recently asked in an interview how you might get a confidence score from a neural network
+- It was very much a blind spot for me, having studied Bayesian inference and Gaussian processes as distinct topics from deep learning
+- I want to turn a weakness into a strength
+- There's a lott of literature on this so I'm going to adopt the approach of picking a few topics and covering them, then following up later for continued education
+
+Bayesian Inference
+- Point estimate demo on tanh + noise
+- Epistemic /alatoric uncertainty
+- MCMC (appendix theory)
+- Gaussian process (appendix theory)
+- MC Dropout
+- Calibration
+
+Uses
+- Optimisation, signal combination. E.g. quant: what's your delta?
+- Interpretability
+- Safety (confidently incorrect)
+- Applications
+
+Theory
+- Epistemic, aleatoric uncertainty
+- Reliability diagrams
+- ECE, MCE, NLL, Brier
+
+Case studies
+- Binary
+- MNIST
+- Regression
+
+Literature
+- Bayesian Neural Nets
+- Variational Bayes, ELBO, Gibbs/MCMC
+- VAE, probabilistic PCA
+- Bayesian Belief Networks
+- What My Deep Model Doesn't Know, Gal https://www.cs.ox.ac.uk/people/yarin.gal/website/blog_3d801aa532c1ce.html
+  - Softmax isn't uncertainty
+  - Gaussian Process = infinite nn with weight dist
+  - Variational Inference unpopular
+  - 
+- MC Dropout, Gal https://arxiv.org/pdf/1506.02142
+- On Calibration of Modern Neural Networks, Guo https://arxiv.org/pdf/1706.04599
+  - Histogram binning
+  - Isotonic regression
+  - Bayesian binning
+  - Platt scaling
+- A Survey of the SOTA, Wang https://arxiv.org/pdf/2308.01222
+  - Post-hoc
+  - Regularisation
+  - Uncertainty estimation
+  - Hybrid
+  - LLM
+- A survey on confidence calibration of deep learning under class imbalance data
+- Focal loss
+- Gumbel-softmax sampling
