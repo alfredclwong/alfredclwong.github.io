@@ -2,6 +2,7 @@
 layout: post
 title: "[Draft] Circle Packing with AlphaEvolve"
 date: 2025-06-19 17:50:00 +0100
+category: blog
 ---
 <script type="text/javascript" id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">

@@ -2,6 +2,7 @@
 layout: post
 title: "A deep dive into OthelloGPT: Sprint"
 date: 2025-03-05 22:13:00 +0000
+category: blog
 ---
 <script type="text/javascript" id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
