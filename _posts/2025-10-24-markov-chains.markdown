@@ -16,9 +16,11 @@ TL;DR
 - Keywords: Chapman-Kolmogorov, hitting times, invariant distribution, random walk
 - References: This is essentially an abridged version of [Dexter's notes](https://dec41.user.srcf.net/notes/IB_M/markov_chains.pdf) of [Grimmett's](https://www.statslab.cam.ac.uk/~grg/) lectures
 
+## Definition
+
 A Markov chain is a sequence of random variables \\(X = (X_0, X_1, \dots)\\) taking values in a discrete state space \\(S\\) such that \\(\mathbb{P}(X_0 = S_i) = \lambda_i\\) and
 
-$$\mathbb{P}(X_{t+1} = x_{t+1} \mid X_0 = x_0, \dots, X_t = x_t) = \mathbb{P}(X_{t+1} = x_{t+1} \mid X_t = x_t)$$
+$$\mathbb{P}(X_{n+1} = x_{n+1} \mid X_0 = x_0, \dots, X_n = x_n) = \mathbb{P}(X_{n+1} = x_{n+1} \mid X_n = x_n)$$
 
 Intuitively, if we want to know the probability of transitioning to a new state, it suffices to know only the current state - the rest of the history is irrelevant.
 
@@ -57,7 +59,7 @@ graph LR
     style Start fill:#87CEEB
 </div>
 
-This is equivalent to the transition matrix \\(P\\), where \\(P_{ij} = \mathbb{P}(X_{t+1} = S_j \mid X_t = S_i)\\).
+This is equivalent to the transition matrix \\(P\\), where \\(p_{ij} = \mathbb{P}(X_{n+1} = S_j \mid X_n = S_i)\\).
 
 $$
 P = \begin{pmatrix}
@@ -73,6 +75,8 @@ $$
 
 Each row sums to 1, defining a discrete distribution from the corresponding state, and the states \\(\pm 3\\) are absorbing: once we hit them, we never leave.
 
+## n-step transitions
+
 Suppose we know the current state and want to figure out the distribution over \\(S\\) after not one, but two, coin flips. To get from \\(x_0\\) to \\(x_2\\), it suffices to marginalise over all possible paths \\(x_0 \rightarrow x_1 \rightarrow x_2\\) for each \\(x_1 \in S\\).
 
 $$
@@ -80,7 +84,7 @@ $$
 \mathbb{P}(X_2 = x_2 \mid X_0 = x_0) &= \sum_{x_1 \in S} \mathbb{P}(X_2 = x_2, X_1 = x_1 \mid X_0 = x_0) \\
 &= \sum_{x_1 \in S} \mathbb{P}(X_2 = x_2 \mid X_1 = x_1, X_0 = x_0) \mathbb{P}(X_1 = x_1 \mid X_0 = x_0) \\
 &= \sum_{x_1 \in S} \mathbb{P}(X_2 = x_2 \mid X_1 = x_1) \mathbb{P}(X_1 = x_1 \mid X_0 = x_0) \\
-&= \sum_{0 \leq k < |S|} P_{kj} P_{ik}
+&= \sum_{0 \leq k < |S|} p_{kj} p_{ik}
 \end{aligned}
 $$
 
@@ -100,17 +104,87 @@ $$
 
 If you're fancy-pants, you can generalise this to get the discrete Chapman-Kolmogorov equation \\(P(m+n) = P(m)P(n)\\), but in our (homogeneous) case we're happy with \\(P(n) = P^n\\).
 
-[TODO] n to infty example w/ linalg
+What happens as \\(n \rightarrow \infty\\)? Let's consider a simpler transition matrix
+
+$$
+P = \begin{pmatrix}
+1-\alpha & \alpha\\
+\beta & 1-\beta\\
+\end{pmatrix}
+$$ 
+
+In order to calculate \\(P^n\\), we first diagonalise it. We solve
+
+$$
+\begin{aligned}
+0 &= \det(P - \lambda I)\\
+&= (1 - \alpha - \lambda)(1 - \beta - \lambda) - \alpha\beta\\
+&= \lambda^2 - (2 - \alpha - \beta)\lambda + (1 - \alpha - \beta)\\
+&= (\lambda - 1)(\lambda - (1 - \alpha - \beta))
+\end{aligned}
+$$
+
+to get eigenvalues \\(\lambda_0 = 1, \lambda_1 = 1 - \alpha - \beta\\), such that
+
+$$
+P^n = U^{-1}
+\begin{pmatrix}
+\lambda_0^n & 0\\
+0 & \lambda_1^n\\
+\end{pmatrix}
+U
+$$
+
+for some matrix \\(U\\). We can skip calculating \\(U\\) and go straight to the linear form
+
+$$
+p_{1,2}(n) = A\cancel{\lambda_0^n} + B\lambda_1^n
+$$
+
+Plugging in \\(p_{1,2}(0) = 0\\) and \\(p_{1,2}(1) = \alpha\\), we get
+
+$$
+\begin{aligned}
+0 &= A + B\\
+\alpha &= A + B\lambda_1
+\end{aligned}
+$$
+
+which gives
+
+$$
+p_{1,2}(n) = \frac{\alpha}{\alpha + \beta} (1 - \lambda_1^n)
+$$
+
+This is all the algebra we need! We swap \\(\alpha \leftrightarrow \beta\\) to get \\(p_{2,1}\\) and remember that rows sum to 1 to get
+
+$$
+P^n = \frac{1}{\alpha + \beta}
+\begin{pmatrix}
+\beta + \alpha\lambda_1^n & \alpha(1 - \lambda_1^n)\\
+\beta(1 - \lambda_1^n) & \alpha + \beta\lambda_1^n\\
+\end{pmatrix}
+\rightarrow
+\frac{1}{\alpha + \beta}
+\begin{pmatrix}
+\beta & \alpha\\
+\beta & \alpha\\
+\end{pmatrix}
+$$
+
+as \\(n \rightarrow \infty\\). All the rows are equal, which means that all starting points converge to a common distribution over \\(S\\)! We call this the invariant distribution \\(\pi_i = p_{ji}(\infty)\\) for all \\(j\\). Note that \\(\pi P = \pi\\), as expected.
+
+## Hitting statistics
 
 Given a Markov chain \\((X_n)_{n \geq 0}\\) and a subset \\(A \subseteq S\\) of the state space, we define the hitting time \\(H^A = \min(\\{n \geq 0: X_n \in A\\} \cup \\{\infty\\})\\) and the hitting probability \\(h_i^A = \mathbb{P}(H^A < \infty \mid X_0 = S_i)\\).
 
-**Theorem 1.** The vector \\(\mathbf{h}^A = (h_i^A: S_i \in S)\\) satisfies
+**Theorem 1.** The vector \\(h^A = (h_i^A: S_i \in S)\\) satisfies
 
 $$
 h_i^A =
 \begin{cases}
 1 &\text{if } S_i \in A\\
-\sum_{0 \leq j < |S|} P_{ij} h_j^A &\text{if } S_i \notin A
+\sum_{0 \leq j < |S|} p_{ij} h_j^A &\text{if } S_i \notin A
 \end{cases}
 $$
 
@@ -120,13 +194,13 @@ and is minimal, in that for any non-negative solution \\((x_i^A: S_i \in S)\\) o
 
 We get a similar result for the expected hitting time \\(k_i = \mathbb{E}[H^A \mid X_0 = S_i]\\).
 
-**Theorem 2.** The vector \\(\mathbf{k}^A = (k_i^A: S_i \in S)\\) is the minimal solution to
+**Theorem 2.** The vector \\(k^A = (k_i^A: S_i \in S)\\) is the minimal solution to
 
 $$
 k_i^A =
 \begin{cases}
 0 &\text{if } S_i \in A\\
-1 + \sum_{0 \leq j < |S|} P_{ij} k_j^A &\text{if } S_i \notin A
+1 + \sum_{0 \leq j < |S|} p_{ij} k_j^A &\text{if } S_i \notin A
 \end{cases}
 $$
 
@@ -155,6 +229,8 @@ Without the boundary condition on the right, the only non-negative solution is \
 **Exercise.** Solve for expected hitting times \\(k_i\\).
 
 **Exercise.** Solve for a general coin flip with probability \\(p\\) of landing heads.
+
+## Conclusion
 
 These are some of the more basic, canonical results derived using Markov chains. However, we've now laid a foundation for many more applications, ranging from Hidden Markov Models to sampling Bayesian posteriors, the Wiener process (Brownian motion), Google's PageRank algorithm, and n-grams in NLP (the strange quote at the top of this post was generated using a [Markov chain model](https://www.clear.rice.edu/comp200/13spring/notes/18/shaney.shtml))!
 
