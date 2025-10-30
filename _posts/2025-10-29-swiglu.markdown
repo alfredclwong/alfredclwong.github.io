@@ -1,0 +1,42 @@
+---
+layout: post
+title: "SwiGLU Intuition"
+category: theory
+tags: maths probability
+mermaid: true
+katex: true
+---
+
+<blockquote cite="Noam Shazeer">
+We attribute their success, as all else, to divine benevolence
+</blockquote>
+
+Draft
+- brief history, vanishing gradients
+- GLU https://arxiv.org/pdf/1612.08083
+- expressing multiplications, ReLU^2
+- backprop, (in)stability, x^3
+
+<figure>
+    <img src="/assets/images/theory/act.svg"/>
+    <figcaption>Fig 1.</figcaption>
+</figure>
+
+$$\alpha_\text{ReLU}(x) = \max(0, x)$$
+
+$$\alpha_\text{SiLU}(x) = x\sigma(x)$$
+
+$$f(\mathbf{x}, \mathbf{w_i}, \alpha, \mathbf{w_o}) = \alpha(\mathbf{x} \cdot \mathbf{w_i}) \mathbf{w_o}$$
+
+$$g(\mathbf{x}, \mathbf{w_i}, \alpha, \mathbf{w_j}, \mathbf{w_o}) = (\mathbf{x} \cdot \mathbf{w_j}) \alpha(\mathbf{x} \cdot \mathbf{w_i}) \mathbf{w_o}$$
+
+- Sigmoid -> tanh: shift and scale
+- ReLU: simple, sparse
+- LeakyReLU/GELU/SiLU: vanishing gradients
+- GLU: data dependent gating, allows meaningfully negative activations
+- SwiGLU: \\((\mathbf{x} \cdot \mathbf{w_j}) (\mathbf{x} \cdot \mathbf{w_i})\\) is a bilinear form so we can express multiplication (does this make bias terms important again?). Depth = polynomial order?
+- [show 2d example]
+- [show 1d cubic]
+- However grad wrt w_i is O(x^3), potentially unstable
+- Maybe it's more param efficient to just use higher-order activation functions? \\(\beta(x) = x \alpha(x)\\), e.g. \\(\beta_\text{ReLU} = \alpha_\text{ReLU}^2\\)
+- ReLU^2 wins https://arxiv.org/pdf/2402.03804 - sparsity is a feature not a bug! Imo sometimes vectors are bidirectional, sometimes not (ray). E.g. "risk-seeking" vector yes, "golden gate bridge" vector no. Maybe it's a simplex, e.g. theirs/mine/empty in OthelloGPT
