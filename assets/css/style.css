@@ -9,11 +9,17 @@ img {
   display: flex;
   justify-content: center;
   /* gap: 0px; */
+  align-items: center;
 }
 
 .image-row img {
   max-width: 100%;
-  height: auto;
+  /* height: auto; */
+  vertical-align: middle;
+}
+
+figure {
+  margin: 30px auto;
 }
 
 figcaption {
