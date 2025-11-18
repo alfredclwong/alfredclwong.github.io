@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "Hyper-Connections"
+subtitle: "Squiggly wiggly networks"
 category: review
 tags: transformer
 mermaid: true

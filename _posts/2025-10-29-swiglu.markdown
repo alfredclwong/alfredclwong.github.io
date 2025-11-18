@@ -1,6 +1,7 @@
 ---
 layout: post
 title: "SwiGLU Intuition"
+subtitle: "SwiGLY wiggly networks"
 category: theory
 tags: maths probability
 mermaid: true
@@ -11,32 +12,97 @@ katex: true
 We attribute their success, as all else, to divine benevolence
 </blockquote>
 
-Draft
-- brief history, vanishing gradients
-- GLU https://arxiv.org/pdf/1612.08083
-- expressing multiplications, ReLU^2
-- backprop, (in)stability, x^3
+Activation functions allow neural networks to express non-linear relationships. At a minimum, they must be non-linear and differentiable. For example, the sigmoid function
+
+$$\sigma(x) = \frac{1}{1+e^{-x}} = \frac{e^x}{1+e^x} = 1-\sigma(-x)$$
+
+has derivative
+
+$$\sigma'(x) = \frac{e^{-x}}{(1+e^{-x})^2} = \sigma(x)\sigma(-x) = \sigma(x)(1-\sigma(x))$$
+
+which has the benefit of being easily calculated if we already know \\(\sigma(x)\\), e.g. from a forward pass. Over time, this evolved into the simpler \\(\text{ReLU}(x) = \max(0, x)\\) with gradient \\(\text{ReLU}'(x) = H(x)\\).
+
+These non-linearities often manifest themselves as sparse encodings within an MLP, where each neuron "activates" based on the presence of a linearly identifiable feature in the input, and uses the magnitude of activation to scale its output vector.
+
+$$f_\alpha(\mathbf{x}) = \overbrace{\alpha(\mathbf{x} \cdot \mathbf{w_i})}^{\text{activation}} \mathbf{w_o}$$
+
+For \\(\alpha = \text{ReLU}\\), if \\(\mathbf{x} \cdot \mathbf{w_i} > 0\\), then the neuron is activated. Otherwise, the neuron is inactivated.
+
+We can see this at work in a 2-neuron XOR gate.
+
+<div class="mermaid" style="text-align: center;">
+graph LR
+    %% Input layer
+    x[x]
+    y[y]
+    b1[1]
+    
+    %% Hidden layer
+    h1["h₁ = [x+y]<sub>+</sub>"]
+    h2["h₂ = [x+y-1]<sub>+</sub>"]
+    
+    %% Output layer
+    z["z = h₁-2h₂"]
+    
+    %% Input to hidden connections
+    x -->|1| h1
+    y -->|1| h1
+    
+    x -->|1| h2
+    y -->|1| h2
+    b1 -->|-1| h2
+    
+    %% Hidden to output connections
+    h1 -->|1| z
+    h2 -->|-2| z
+    
+    %% Styling
+    classDef input fill:#e1f5ff,stroke:#333,stroke-width:2px
+    classDef hidden fill:#fff4e1,stroke:#333,stroke-width:2px
+    classDef output fill:#e1ffe1,stroke:#333,stroke-width:2px
+    classDef bias fill:#ffe1e1,stroke:#333,stroke-width:2px
+    
+    class x,y input
+    class h1,h2 hidden
+    class z output
+    class b1,b2 bias
+</div>
+
+The first neuron identifies x OR y, the second x AND y, and the output \\(z=1\\) iff the first neuron is active and the second inactive.
+
+The sparsity introduced by the flat left tail of ReLU is really nice for reverse engineering neural nets, as we can learn to associate certain features with activation and inactivation of individual neurons (see OthelloGPT).
+
+However, this is a double-edged sword: when a neuron is inactive, it has no gradient, and thus doesn't learn. In order to avoid this, "leaky" variants of ReLU have been proposed, where a small gradient exists for \\(x<0\\). For example, \\(\text{Swish}_\beta(x) = x\sigma(\beta x)\\), parameterised by \\(\beta \geq 0\\), interpolates between \\(\text{Swish}_0(x) = x/2\\) and \\(\text{Swish} _\infty(x) = \text{ReLU}(x)\\), with \\(\text{SiLU}(x) = \text{Swish}_1(x)\\) commonly used.
+
+[interactive beta slider with transparent asymptotes]
+
+<!-- In more complicated networks, features aren't always as easily separable (see superposition, SAEs), but the intuition of \\(\alpha\\) representing how "switched on" a neuron is still holds (except that a neuron can actually represent multiple features at once). -->
+
+As compute availability and task complexity increased, so did the desire for more expressive neurons. GLUs (https://arxiv.org/pdf/1612.08083) introduced flexibility by factorising the feed-forward function into two separable components: an information and a gating variable.
+
+$$g_\alpha(\mathbf{x}) = \overbrace{(\mathbf{x} \cdot \mathbf{w_j})}^{\text{info}} \overbrace{\alpha(\mathbf{x} \cdot \mathbf{w_i})}^{\text{gate}} \mathbf{w_o}$$
+
+Several candidate \\(\alpha\\) functions were trialled and empirically it was decided that \\(\alpha = \text{SiLU}\\) was the "best" (https://arxiv.org/pdf/2002.05202), which led to the widespread adoption of the so-called corresponding SwiGLU (Swish + GLU) activation.
+
+Unfortunately, I feel that this naming leads to a lack of intuition on why this function performs so well, likely because this wasn't well understood at the time (the leading quote for this post was lifted verbatim from the SwiGLU paper). Rather than SwiGLU being a GLU with \\(\alpha = \text{SiLU}\\), I see it as a GLU with \\(\alpha = \sigma\\) and a bilinear information term \\((\mathbf{x} \cdot \mathbf{w_j})(\mathbf{x} \cdot \mathbf{w_i})\\).
+
+This is powerful because the bilinear term allows for multiplication between input variables!
+
+[1d x^2 relu vs swiglu]
+
+[2d ellipse]
+
+One thing we must be cautious about is gradient instability due to higher-order terms.
+
+Polynomial order, ReLU^2 (https://arxiv.org/pdf/2402.03804) discussion
+
+Towards biological neuron expression (integrators? dynamical systems? https://www.science.org/doi/10.1126/science.aax6239)
 
 <figure>
     <img src="/assets/images/theory/act.svg"/>
     <figcaption>Fig 1.</figcaption>
 </figure>
 
-$$\alpha_\text{ReLU}(x) = \max(0, x)$$
-
-$$\alpha_\text{SiLU}(x) = x\sigma(x)$$
-
-$$f(\mathbf{x}, \mathbf{w_i}, \alpha, \mathbf{w_o}) = \alpha(\mathbf{x} \cdot \mathbf{w_i}) \mathbf{w_o}$$
-
-$$g(\mathbf{x}, \mathbf{w_i}, \alpha, \mathbf{w_j}, \mathbf{w_o}) = (\mathbf{x} \cdot \mathbf{w_j}) \alpha(\mathbf{x} \cdot \mathbf{w_i}) \mathbf{w_o}$$
-
-- Sigmoid -> tanh: shift and scale
-- ReLU: simple, sparse
-- LeakyReLU/GELU/SiLU: vanishing gradients
-- GLU: data dependent gating, allows meaningfully negative activations
-- SwiGLU: \\((\mathbf{x} \cdot \mathbf{w_j}) (\mathbf{x} \cdot \mathbf{w_i})\\) is a bilinear form so we can express multiplication (does this make bias terms important again?). Depth = polynomial order?
-- [show 2d example]
-- [show 1d cubic]
-- However grad wrt w_i is O(x^3), potentially unstable
+- Key thing is depth = polynomial order?
 - Maybe it's more param efficient to just use higher-order activation functions? \\(\beta(x) = x \alpha(x)\\), e.g. \\(\beta_\text{ReLU} = \alpha_\text{ReLU}^2\\)
 - ReLU^2 wins https://arxiv.org/pdf/2402.03804 - sparsity is a feature not a bug! Imo sometimes vectors are bidirectional, sometimes not (ray). E.g. "risk-seeking" vector yes, "golden gate bridge" vector no. Maybe it's a simplex, e.g. theirs/mine/empty in OthelloGPT

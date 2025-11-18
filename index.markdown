@@ -8,31 +8,17 @@ layout: default
 [Email](mailto:alfred.cl.wong@gmail.com) \| [GitHub](https://github.com/alfredclwong) \| [LinkedIn](https://www.linkedin.com/in/alfred--wong)
 
 <section>
-  <h2>Blog</h2>
+  <h2>Recent Posts</h2>
   <ul>
-    {% assign blog_posts = site.categories.blog %}
-    {% for post in blog_posts %}
-      <li><a href="{{ post.url }}">{{ post.title }}</a></li>
-    {% endfor %}
-  </ul>
-</section>
-
-<section>
-  <h2>Theory</h2>
-  <ul>
-    {% assign theory_posts = site.categories.theory %}
-    {% for post in theory_posts %}
-      <li><a href="{{ post.url }}">{{ post.title }}</a></li>
-    {% endfor %}
-  </ul>
-</section>
-
-<section>
-  <h2>Paper Reviews</h2>
-  <ul>
-    {% assign review_posts = site.categories.review %}
-    {% for post in review_posts %}
-      <li><a href="{{ post.url }}">{{ post.title }}</a></li>
+    {% assign recent_posts = site.posts | sort: 'date' | reverse %}
+    {% for post in recent_posts limit:10 %}
+      <li>
+        <span class="date">{{ post.date | date: "%d %b %y" }}</span>
+        <a href="{{ post.url }}">{{ post.title }}</a>
+        <span class="category">[{{ post.category }}]</span>
+        {% if post.subtitle %}<span class="subtitle">"{{ post.subtitle }}"</span>{% endif %}
+        <span class="wordcount">({{ post.content | number_of_words }})</span>
+      </li>
     {% endfor %}
   </ul>
 </section>
