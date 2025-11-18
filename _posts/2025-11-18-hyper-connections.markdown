@@ -9,7 +9,7 @@ katex: true
 ---
 <link rel="stylesheet" href="/assets/css/style.css">
 
-Have you ever looked at boring old RNN and thought to yourself, *"I wish this looked more like a game of 5D Chess with Multiverse Time Travel"*? If so, you'll like this paper...
+Have you ever looked at a boring old RNN and thought to yourself, *"I wish this looked more like a game of 5D Chess with Multiverse Time Travel"*? If so, you'll like this paper...
 
 <figure class="image">
   <div class="image-row">
@@ -27,7 +27,7 @@ $$
 \tag{1}
 $$
 
-Hyper-Connections[^1] (HC) extend RNNs by expanding the residual stream \\(\mathbf{h} \in \mathbb{R}^D\\) into a hyper-stream \\(\mathbf{H} \in \mathbb{R}^{N\times D}\\) with expansion factor \\(N\\). This is done by tiling the initial input \\(\mathbf{h^0}\\) such that \\(\mathbf{H^0} = (\mathbf{h^0}\ \cdots\ \mathbf{h^0})^T\\). Subsequently, we introduce three linear maps for each layer that correspond to the three components of an RNN skip connection:
+Hyper-Connections[^1] (HC) extend RNNs by expanding the residual stream \\(\mathbf{h} \in \mathbb{R}^D\\) into a hyper-stream \\(\mathbf{H} \in \mathbb{R}^{N\times D}\\) with expansion factor \\(N\\). This is done by tiling the initial input \\(\mathbf{h^0}\\) such that \\(\mathbf{H^0} = \begin{pmatrix} \mathbf{h^0} & \cdots & \mathbf{h^0} \end{pmatrix}^T \\). Subsequently, we introduce three linear maps for each layer that correspond to the three components of an RNN skip connection:
 
 $$
 \mathbf{H^k} = \overbrace{\mathbf{A_r^k}^T\mathbf{H^{k-1}}}^{\text{hyper-skip}} + \underbrace{\mathbf{B^k}^T \mathcal{T}^k(\overbrace{\mathbf{H^{k-1}}^T \mathbf{A_m^k}}^{\text{hyper-input}})^T}_{\text{hyper-output}}
@@ -53,9 +53,9 @@ $$
 \end{align*}
 $$
 
-where the weights are sized to project the normalised hyper-stream \\(\mathbf{\bar{H}}\\) into the appropriate weight spaces, and \\(s_\alpha\\), \\(s_\beta\\) are learned scales for the tanh-activations. The authors refer to these as Dynamic Hyper-Connections (DHC), as opposed to Static Hyper-Connections (SHC).
+where \\(\mathbf{W_r} \in \mathbb{R}^{D\times N}\\), \\(\mathbf{W_m} \in \mathbb{R}^{D\times 1}\\), \\(\mathbf{W_b} \in \mathbb{R}^{D\times 1}\\) project the normalised hyper-stream \\(\mathbf{\bar{H}}\\) into the appropriate weight spaces, and \\(s_\alpha\\), \\(s_\beta\\) are learned scales for the tanh-activations. The authors refer to these as Dynamic Hyper-Connections (DHC), as opposed to the original Static Hyper-Connections (SHC).
 
-SHCs allow for architectural flexibility. For example, let's take a Transformer layer consisting of one Attention block (layer \\(k\\)) and one FFN block (layer \\(k+1\\)) with input \\(\mathbf{H^{k-1}} = (\mathbf{h_1}\ \mathbf{h_2})^T\\), and set
+SHC allows for architectural flexibility. For example, let's take a Transformer layer consisting of one Attention block (layer \\(k\\)) and one FFN block (layer \\(k+1\\)) with input \\(\mathbf{H^{k-1}} = \begin{pmatrix} \mathbf{h_1} & \mathbf{h_2} \end{pmatrix}^T\\), and set
 
 $$
 \begin{align*}
@@ -140,6 +140,8 @@ graph LR
 
 We see that \\(\mathbf{a_{in}} = \mathbf{f_{in}} = \mathbf{h_1} + \mathbf{h_2}\\), so the blocks are effectively applied in parallel, as if we had a Parallel Transformer architecture with a single residual stream.
 
+Other architectural changes could include complete ablation of certain blocks or the re-injection of earlier residuals into later layers, both of which are observed in the paper.
+
 <figure>
 <div class="mermaid" style="text-align: center;">
 graph LR
@@ -189,9 +191,7 @@ graph LR
 <figcaption>Fig 3. Parallel Transformer</figcaption>
 </figure>
 
-Other architectural changes could include complete ablation of certain blocks or the re-injection of earlier residuals into later layers, potentially helping with preventing representation collapse as features accumulate in the residual stream.
-
-DHC allows for data-specific gating. For example, maybe one hyper-stream could process grammatical features while another focused on word predictions. Again, this could help with mitigating representation collapse by avoiding feature crowding, which can lead to models relying on superposition or forgetting.
+DHC allows for data-specific gating. For example, maybe one hyper-stream could process grammatical features while another focused on word predictions.
 
 Of course, the hyper-streams come with some overhead. The additional parameter count is negligible: vanilla Transformer parameter counts are \\(\mathcal{O}(D^2L)\\), while SHC adds \\(\mathcal{O}(N^2L)\\) and DHC adds \\(\mathcal{O}(DNL)\\), with \\(N \ll D\\). Similarly, the computational overhead is also small, since the weights are low-rank. The main overhead comes from the additional activations produced by the hyper-stream, amounting to a significant +16% for HCx2 and scaling approximately linearly with \\(N\\).
 
@@ -206,22 +206,24 @@ Unfortunately (and slightly suspiciously), the authors don't offer much in terms
 
 ## Thoughts
 - Avoiding representation collapse is presented as the primary motiviating factor for HC. But sometimes it can be useful. E.g. [OthelloGPT](/_posts/2025-03-02-othello-gpt-0.markdown) forgetting board state representation in final layers to replace with legality (yes, this is a toy example, but possibly similar to some language subtasks).
-- Authors claim that low cosine similarity between layers supports the case for HC. This is a potentially misleading proxy for usefuleness - if we replaced the hyper-streams with random noise then this would also decrease similarity.
+- Authors claim that low cosine similarity between layers supports the case for HC. This is a potentially misleading proxy for usefulness - if we replaced the hyper-streams with random noise then this would also decrease similarity. Rather, it could be more informative to perform model ablations, such as dropping out entire layers.
 - Architectural reconfiguration is valuable, but this is essentially a hyperparameter search in a large, combinatorial space. Simple gradient descent run alongside the rest of the model training might not necessarily converge to a good solution (that being said, empirically it seems to do OK).
-- Expanding beyond \\(N=2\\), the minimum requirement for parallel architectures, seems unnecessary. The \\(\mathbf{A}\\) matrix "width connections" seem a little redundant as rescaling can just be done inside the transformer blocks. I can anecdotally back this up by observing most of the performance gains in my replication when using DHC/DFC with \\(N=M=1\\). Also, the success of frac-connections further suggests that maybe the "hyper-" approach is unnecessary. The common denominator across hyper- and frac-connections is the dynamic element.
+- The case where certain connection weights tend to 0 is reminiscent of Edge Pruning in mech interp![^3] However, I would intuit that circuit discovery is a much more suitable use case as the underlying subtask is simpler than that of a full LLM.
+- Expanding beyond \\(N=2\\), the minimum requirement for parallel architectures, seems unnecessary. The \\(\mathbf{A}\\) matrix "width connections" seem a little redundant as relative rescaling can be done within the Transformer blocks. I can anecdotally back this up by observing most of the performance gains in my replication when using DHC/DFC with \\(N=M=1\\). Also, the success of frac-connections further suggests that maybe the "hyper-" approach is unnecessary. The common denominator across hyper- and frac-connections is the dynamic element.
 - The authors have a small section presenting the DHCx1 model as a "failure" because it ablates an Attention block and converges slower. However, it ends up with pretty much the same performance as the control model, so I actually see this as a success!
 - Both hyper-/frac-connections can be thought of as full-/low-rank projections where \\(\mathbf{\Lambda_1} = \mathbf{\Lambda_2} = \mathbf{I}\\), \\(\mathbf{\Gamma_1} = \begin{pmatrix} \mathbf{I_F} & \mathbf{0_F} \end{pmatrix}\\), \\(\mathbf{\Gamma_2} = \begin{pmatrix} \mathbf{0_F} & \mathbf{I_F} \end{pmatrix}\\), and
 
 $$
 \begin{align*}
-\mathbf{H^0} &= \begin{pmatrix} \mathbf{h^0}\ \mathbf{h^0} \end{pmatrix}^T = \begin{pmatrix} \mathbf{\Lambda_1} \mathbf{h^0} & \mathbf{\Lambda_2} \mathbf{h^0} \end{pmatrix}^T\\
-\mathbf{F^0} &= \begin{pmatrix} \mathbf{h^0_1}\ \mathbf{h^0_2} \end{pmatrix}^T = \begin{pmatrix} \mathbf{\Gamma_1} \mathbf{h^0} & \mathbf{\Gamma_2} \mathbf{h^0} \end{pmatrix}^T
+\mathbf{H^0} &= \begin{pmatrix} \mathbf{h^0} & \mathbf{h^0} \end{pmatrix}^T = \begin{pmatrix} \mathbf{\Lambda_1} \mathbf{h^0} & \mathbf{\Lambda_2} \mathbf{h^0} \end{pmatrix}^T\\
+\mathbf{F^0} &= \begin{pmatrix} \mathbf{h^0_1} & \mathbf{h^0_2} \end{pmatrix}^T = \begin{pmatrix} \mathbf{\Gamma_1} \mathbf{h^0} & \mathbf{\Gamma_2} \mathbf{h^0} \end{pmatrix}^T
 \end{align*}
 $$
 
 - Any linear operations outside of the non-linear Transformer blocks may be folded into each other. This may provide insights into generalisation and/or equivalences. What if we set \\(M = D\\)??
-- Replication source code [here](https://github.com/alfredclwong/hyper-connections).
+- I replicated the paper! Repo is [here](https://github.com/alfredclwong/hyper-connections). Pending \$\$\$ to pre-train on 3T tokens...
 
 ## References
 [^1]: Zhu, D., et al. (2024). *Hyper‑Connections*. [arXiv:2409.19606](https://arxiv.org/pdf/2409.19606).
 [^2]: Zhu, D., et al. (2025). *Frac‑Connections: Fractional Extension of Hyper‑Connections*. [arXiv:2503.14125](https://arxiv.org/pdf/2503.14125).
+[^3]: Bhaskar, A., Wettig, A., et al. (2025). *Finding Transformer Circuits with Edge Pruning* [arXiv:2406.16778](https://arxiv.org/pdf/2406.16778)
